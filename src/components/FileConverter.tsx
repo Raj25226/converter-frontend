@@ -12,6 +12,7 @@ import {
 	FileCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { trackConversion } from "./Analytics";
 
 interface FileConverterProps {
 	title: string;
@@ -102,6 +103,9 @@ export default function FileConverter({
 				setDownloadUrl(response.data.downloadUrl);
 				setFileName(response.data.fileName);
 				setProgress(100);
+				
+				// Track successful conversion in analytics
+				await trackConversion(endpoint.replace('/', ''));
 			} else {
 				setError(response.data.message || "Conversion failed");
 			}

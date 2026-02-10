@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Mail, Lock, User, Loader2, UserPlus, AlertCircle, CheckCircle } from 'lucide-react'
+import GoogleSignIn from '@/components/GoogleSignIn'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -124,6 +125,29 @@ export default function SignupPage() {
 
         {/* Signup Form */}
         <div className="card p-8 animate-scale-in">
+          {/* Google Sign-In */}
+          <div className="mb-6">
+            <GoogleSignIn
+              text="signup_with"
+              onSuccess={() => {
+                // Success handled in GoogleSignIn component
+              }}
+              onError={(error) => {
+                setError('Google sign-up failed. Please try again.')
+              }}
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Alert */}
             {error && (
@@ -308,7 +332,7 @@ export default function SignupPage() {
             </button>
           </form>
 
-          {/* Divider */}
+          {/* Login Link */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

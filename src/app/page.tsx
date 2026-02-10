@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { FileText, Image, Music, FileSpreadsheet, ArrowRight, Zap, Shield, Smartphone, Star, Clock, LogIn, UserPlus, User, LogOut } from 'lucide-react'
+import { FileText, Image, Music, FileSpreadsheet, ArrowRight, Zap, Shield, Smartphone, Star, Clock, LogIn, UserPlus, User, LogOut, Presentation, FileImage } from 'lucide-react'
+import Analytics from '@/components/Analytics'
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
@@ -32,6 +33,15 @@ export default function Home() {
       badge: 'Most Popular',
     },
     {
+      title: 'Word to PDF',
+      description: 'Convert Word documents to PDF format',
+      icon: FileText,
+      url: '/word-to-pdf',
+      gradient: 'from-blue-600 to-indigo-600',
+      iconBg: 'bg-indigo-500',
+      badge: 'Essential',
+    },
+    {
       title: 'JPG to PNG',
       description: 'Convert JPG images to PNG format',
       icon: Image,
@@ -41,22 +51,67 @@ export default function Home() {
       badge: 'Fast',
     },
     {
+      title: 'PNG to JPG',
+      description: 'Convert PNG images to JPG format',
+      icon: Image,
+      url: '/png-to-jpg',
+      gradient: 'from-teal-500 to-cyan-600',
+      iconBg: 'bg-teal-500',
+      badge: 'Quality',
+    },
+    {
       title: 'MP4 to MP3',
       description: 'Extract audio from video files',
       icon: Music,
       url: '/mp4-to-mp3',
       gradient: 'from-purple-500 to-purple-600',
       iconBg: 'bg-purple-500',
-      badge: 'HD Quality',
+      badge: 'HD Audio',
     },
     {
       title: 'Excel to PDF',
-      description: 'Convert Excel spreadsheets to PDF documents',
+      description: 'Convert Excel spreadsheets to PDF',
       icon: FileSpreadsheet,
       url: '/excel-to-pdf',
       gradient: 'from-orange-500 to-orange-600',
       iconBg: 'bg-orange-500',
       badge: 'Professional',
+    },
+    {
+      title: 'PDF to Excel',
+      description: 'Extract tables from PDF to Excel',
+      icon: FileSpreadsheet,
+      url: '/pdf-to-excel',
+      gradient: 'from-green-600 to-emerald-600',
+      iconBg: 'bg-emerald-500',
+      badge: 'Smart',
+    },
+    {
+      title: 'PPT to PDF',
+      description: 'Convert PowerPoint to PDF documents',
+      icon: Presentation,
+      url: '/ppt-to-pdf',
+      gradient: 'from-red-500 to-pink-600',
+      iconBg: 'bg-red-500',
+      badge: 'Pro',
+    },
+    {
+      title: 'HEIC to JPG',
+      description: 'Convert iPhone images to JPG',
+      icon: FileImage,
+      url: '/heic-to-jpg',
+      gradient: 'from-indigo-500 to-purple-600',
+      iconBg: 'bg-indigo-500',
+      badge: 'iOS',
+    },
+    {
+      title: 'WebP to PNG',
+      description: 'Convert WebP images to PNG format',
+      icon: Image,
+      url: '/webp-to-png',
+      gradient: 'from-cyan-500 to-blue-600',
+      iconBg: 'bg-cyan-500',
+      badge: 'Modern',
     },
   ]
 
@@ -84,13 +139,6 @@ export default function Home() {
     },
   ]
 
-  const stats = [
-    { value: '100K+', label: 'Files Converted' },
-    { value: '50+', label: 'Countries' },
-    { value: '4.9/5', label: 'User Rating' },
-    { value: '24/7', label: 'Available' },
-  ]
-
   return (
     <div className="flex-1">
       {/* Navigation Bar */}
@@ -106,7 +154,11 @@ export default function Home() {
               {user ? (
                 <>
                   <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
-                    <User className="w-4 h-4 text-gray-600" />
+                    {user.picture ? (
+                      <img src={user.picture} alt={user.firstName} className="w-6 h-6 rounded-full" />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-600" />
+                    )}
                     <span className="text-sm font-medium text-gray-700">
                       {user.firstName} {user.lastName}
                     </span>
@@ -167,23 +219,18 @@ export default function Home() {
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-              Professional file conversion made simple. No registration, no software installation, 
+              Professional file conversion made simple. No registration required, 
               and your files are automatically deleted after 30 minutes.
             </p>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto mb-16">
-              {stats.map((stat, index) => (
-                <div key={index} className="animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
-                  <div className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
-                </div>
-              ))}
+            {/* Analytics */}
+            <div className="mb-16">
+              <Analytics />
             </div>
           </div>
 
           {/* Converter Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
             {converters.map((converter, index) => {
               const Icon = converter.icon
               return (
@@ -191,7 +238,7 @@ export default function Home() {
                   key={converter.url}
                   href={converter.url}
                   className="group animate-scale-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="card card-hover h-full p-6 relative overflow-hidden">
                     {/* Badge */}
@@ -207,7 +254,7 @@ export default function Home() {
                     </div>
 
                     {/* Content */}
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                       {converter.title}
                     </h3>
                     <p className="text-gray-600 text-sm mb-4 leading-relaxed">
@@ -311,20 +358,29 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h3 className="text-xl font-bold mb-4">File Converter</h3>
               <p className="text-gray-400">
-                Fast, secure, and free online file conversion tool. No registration required.
+                Fast, secure, and free online file conversion tool.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Converters</h4>
+              <h4 className="font-semibold mb-4">PDF Converters</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link href="/pdf-to-word" className="hover:text-white transition-colors">PDF to Word</Link></li>
+                <li><Link href="/word-to-pdf" className="hover:text-white transition-colors">Word to PDF</Link></li>
+                <li><Link href="/pdf-to-excel" className="hover:text-white transition-colors">PDF to Excel</Link></li>
+                <li><Link href="/ppt-to-pdf" className="hover:text-white transition-colors">PPT to PDF</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Image Converters</h4>
+              <ul className="space-y-2 text-gray-400">
                 <li><Link href="/jpg-to-png" className="hover:text-white transition-colors">JPG to PNG</Link></li>
-                <li><Link href="/mp4-to-mp3" className="hover:text-white transition-colors">MP4 to MP3</Link></li>
-                <li><Link href="/excel-to-pdf" className="hover:text-white transition-colors">Excel to PDF</Link></li>
+                <li><Link href="/png-to-jpg" className="hover:text-white transition-colors">PNG to JPG</Link></li>
+                <li><Link href="/heic-to-jpg" className="hover:text-white transition-colors">HEIC to JPG</Link></li>
+                <li><Link href="/webp-to-png" className="hover:text-white transition-colors">WebP to PNG</Link></li>
               </ul>
             </div>
             <div>
