@@ -1,5 +1,7 @@
 import FileConverter from "@/components/FileConverter";
-import { FileText } from "lucide-react";
+import { Archive } from "lucide-react";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "ZIP Extract Online – Free", description: "Extract ZIP, RAR, and 7Z archive files online for free. No software needed." };
 export default function Page() {
-  return <FileConverter title="zip-extract Converter" description="Convert your files instantly" endpoint="/zip-extract" acceptedFormats=".pdf,.jpg,.mp4,.docx,.zip" gradient="from-blue-500 to-violet-600" />;
+  return <FileConverter title="ZIP Extract" description="Extract ZIP, RAR, and 7Z archives online — no software needed" endpoint="/zip-extract" acceptedFormats=".zip,.rar,.7z" icon={<Archive className="w-8 h-8" />} gradient="from-amber-500 to-orange-600" />;
 }

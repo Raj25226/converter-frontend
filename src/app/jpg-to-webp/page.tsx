@@ -1,5 +1,7 @@
 import FileConverter from "@/components/FileConverter";
-import { FileText } from "lucide-react";
+import { ImageIcon } from "lucide-react";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "JPG to WebP Converter – Free Online", description: "Convert JPG images to modern WebP format online for free." };
 export default function Page() {
-  return <FileConverter title="jpg-to-webp Converter" description="Convert your files instantly" endpoint="/jpg-to-webp" acceptedFormats=".pdf,.jpg,.mp4,.docx,.zip" gradient="from-blue-500 to-violet-600" />;
+  return <FileConverter title="JPG to WebP Converter" description="Convert JPG images to WebP for smaller file sizes" endpoint="/jpg-to-webp" acceptedFormats=".jpg,.jpeg" icon={<ImageIcon className="w-8 h-8" />} gradient="from-sky-500 to-blue-600" />;
 }

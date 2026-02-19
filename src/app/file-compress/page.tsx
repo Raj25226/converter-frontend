@@ -1,5 +1,7 @@
 import FileConverter from "@/components/FileConverter";
-import { FileText } from "lucide-react";
+import { Minimize2 } from "lucide-react";
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "File Compressor Online – Free", description: "Compress and reduce image and PDF file sizes online for free." };
 export default function Page() {
-  return <FileConverter title="file-compress Converter" description="Convert your files instantly" endpoint="/file-compress" acceptedFormats=".pdf,.jpg,.mp4,.docx,.zip" gradient="from-blue-500 to-violet-600" />;
+  return <FileConverter title="File Compressor" description="Compress and reduce file sizes — images and PDFs" endpoint="/file-compress" acceptedFormats=".jpg,.jpeg,.png,.pdf" icon={<Minimize2 className="w-8 h-8" />} gradient="from-slate-600 to-gray-700" />;
 }
