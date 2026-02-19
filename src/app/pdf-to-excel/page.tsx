@@ -1,15 +1,5 @@
-import FileConverter from '@/components/FileConverter'
-import { FileSpreadsheet } from 'lucide-react'
-
-export default function PdfToExcel() {
-  return (
-    <FileConverter
-      title="PDF to Excel Converter"
-      description="Extract tables and data from PDF to Excel spreadsheets"
-      endpoint="/pdf-to-excel"
-      acceptedFormats=".pdf"
-      icon={<FileSpreadsheet className="w-16 h-16 text-white" />}
-      gradient="from-green-600 to-emerald-600"
-    />
-  )
+import FileConverter from "@/components/FileConverter";
+import { FileText } from "lucide-react";
+export default function Page() {
+  return <FileConverter title="pdf-to-excel Converter" description="Convert your files instantly" endpoint="/pdf-to-excel" acceptedFormats=".pdf,.jpg,.mp4,.docx,.zip" gradient="from-blue-500 to-violet-600" />;
 }

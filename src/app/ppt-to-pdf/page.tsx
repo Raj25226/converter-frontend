@@ -1,15 +1,5 @@
-import FileConverter from '@/components/FileConverter'
-import { Presentation } from 'lucide-react'
-
-export default function PptToPdf() {
-  return (
-    <FileConverter
-      title="PowerPoint to PDF Converter"
-      description="Convert PowerPoint presentations to PDF documents"
-      endpoint="/ppt-to-pdf"
-      acceptedFormats=".pptx,.ppt"
-      icon={<Presentation className="w-16 h-16 text-white" />}
-      gradient="from-red-500 to-pink-600"
-    />
-  )
+import FileConverter from "@/components/FileConverter";
+import { FileText } from "lucide-react";
+export default function Page() {
+  return <FileConverter title="ppt-to-pdf Converter" description="Convert your files instantly" endpoint="/ppt-to-pdf" acceptedFormats=".pdf,.jpg,.mp4,.docx,.zip" gradient="from-blue-500 to-violet-600" />;
 }

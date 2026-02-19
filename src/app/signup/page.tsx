@@ -1,369 +1,180 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, Loader2, UserPlus, AlertCircle, CheckCircle } from 'lucide-react'
-import GoogleSignIn from '@/components/GoogleSignIn'
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Mail, Lock, User, UserPlus, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
-export default function SignupPage() {
-  const router = useRouter()
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [passwordStrength, setPasswordStrength] = useState(0)
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: "8+ characters", ok: password.length >= 8 },
+    { label: "Uppercase", ok: /[A-Z]/.test(password) },
+    { label: "Number", ok: /\d/.test(password) },
+    { label: "Special char", ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = checks.filter(c => c.ok).length;
+  const colors = ["", "bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-emerald-500"];
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: value,
-    })
-    setError('')
-
-    // Check password strength
-    if (name === 'password') {
-      let strength = 0
-      if (value.length >= 6) strength++
-      if (value.length >= 10) strength++
-      if (/[A-Z]/.test(value)) strength++
-      if (/[0-9]/.test(value)) strength++
-      if (/[^A-Za-z0-9]/.test(value)) strength++
-      setPasswordStrength(strength)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.status === 'success') {
-        // Store token in localStorage
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify({
-          id: data.userId,
-          email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          role: data.role,
-        }))
-
-        // Redirect to home page
-        router.push('/')
-      } else {
-        setError(data.message || 'Registration failed')
-      }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getPasswordStrengthColor = () => {
-    if (passwordStrength <= 1) return 'bg-red-500'
-    if (passwordStrength <= 3) return 'bg-yellow-500'
-    return 'bg-green-500'
-  }
-
-  const getPasswordStrengthText = () => {
-    if (passwordStrength === 0) return ''
-    if (passwordStrength <= 1) return 'Weak'
-    if (passwordStrength <= 3) return 'Medium'
-    return 'Strong'
-  }
+  if (!password) return null;
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-6">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-xl">
-              <UserPlus className="w-8 h-8 text-white" />
-            </div>
-          </Link>
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">Create Account</h2>
-          <p className="text-gray-600">Start converting your files for free</p>
-        </div>
-
-        {/* Signup Form */}
-        <div className="card p-8 animate-scale-in">
-          {/* Google Sign-In */}
-          <div className="mb-6">
-            <GoogleSignIn
-              text="signup_with"
-              onSuccess={() => {
-                // Success handled in GoogleSignIn component
-              }}
-              onError={(error) => {
-                setError('Google sign-up failed. Please try again.')
-              }}
-            />
-          </div>
-
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Error Alert */}
-            {error && (
-              <div className="alert-error">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  First Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="input-field pl-10"
-                    placeholder="John"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
-
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="input-field pl-10"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="input-field pl-10"
-                  placeholder="••••••••"
-                />
-              </div>
-              {/* Password Strength Indicator */}
-              {formData.password && (
-                <div className="mt-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
-                        style={{ width: `${(passwordStrength / 5) * 100}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs font-medium text-gray-600">
-                      {getPasswordStrengthText()}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Use 6+ characters with a mix of letters, numbers & symbols
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Confirm Password Field */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="input-field pl-10"
-                  placeholder="••••••••"
-                />
-              </div>
-              {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                <div className="mt-2 flex items-center text-green-600 text-sm">
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Passwords match
-                </div>
-              )}
-            </div>
-
-            {/* Terms & Conditions */}
-            <div className="flex items-start">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                required
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                I agree to the{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-500">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-500">
-                  Privacy Policy
-                </a>
-              </label>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary w-full py-3 text-lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-5 h-5 mr-2" />
-                  Create Account
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Login Link */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Already have an account?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                href="/login"
-                className="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-              >
-                Sign in instead
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Back to Home */}
-        <div className="mt-8 text-center">
-          <Link
-            href="/"
-            className="text-gray-600 hover:text-gray-900 font-medium inline-flex items-center"
-          >
-            ← Back to Home
-          </Link>
+    <div className="mt-2">
+      <div className="flex gap-1 mb-1.5">
+        {[1,2,3,4].map(i => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= score ? colors[score] : "bg-gray-200 dark:bg-gray-700"}`} />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <p className={`text-xs font-medium ${score >= 3 ? "text-emerald-500" : score === 2 ? "text-yellow-500" : "text-red-500"}`}>
+          {labels[score]}
+        </p>
+        <div className="flex gap-2">
+          {checks.map(c => (
+            <span key={c.label} className={`text-xs ${c.ok ? "text-emerald-500" : ""}`} style={{ color: c.ok ? undefined : "rgb(var(--muted))" }}>
+              {c.ok ? "✓" : "·"} {c.label}
+            </span>
+          ))}
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+export default function SignupPage() {
+  const router = useRouter();
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    if (form.password !== form.confirmPassword) { setError("Passwords do not match"); setLoading(false); return; }
+    if (form.password.length < 8) { setError("Password must be at least 8 characters"); setLoading(false); return; }
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName: form.firstName, lastName: form.lastName, email: form.email, password: form.password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess(true);
+        setTimeout(() => router.push("/login"), 3000);
+      } else {
+        setError(data.message || "Signup failed. Please try again.");
+      }
+    } catch {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
+        <div className="w-full max-w-md">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm mb-8 nav-link">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </Link>
+
+          <div className="card p-8 sm:p-10">
+            <div className="text-center mb-8">
+              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <UserPlus className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "Syne, sans-serif" }}>Create Account</h2>
+              <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>Get 10 free conversions per day</p>
+            </div>
+
+            {error && (
+              <div className="alert-error mb-5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="alert-success mb-5 animate-fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Account created!</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300">Check your email to verify. Redirecting to login...</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>First Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
+                    <input name="firstName" type="text" required value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder="John" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Last Name</label>
+                  <input name="lastName" type="text" required value={form.lastName} onChange={handleChange} className="input-field" placeholder="Doe" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
+                  <input name="email" type="email" required value={form.email} onChange={handleChange} className="input-field pl-10" placeholder="you@example.com" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
+                  <input name="password" type="password" required value={form.password} onChange={handleChange} className="input-field pl-10" placeholder="••••••••" minLength={8} />
+                </div>
+                <PasswordStrength password={form.password} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
+                  <input name="confirmPassword" type="password" required value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder="••••••••" />
+                </div>
+                {form.confirmPassword && form.password !== form.confirmPassword && (
+                  <p className="text-xs text-red-500 mt-1">Passwords don't match</p>
+                )}
+              </div>
+              <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                By signing up, you agree to our{" "}
+                <Link href="/terms" className="text-blue-500 hover:underline">Terms</Link> and{" "}
+                <Link href="/privacy" className="text-blue-500 hover:underline">Privacy Policy</Link>
+              </p>
+              <button type="submit" disabled={loading || success} className="w-full btn btn-primary py-3.5">
+                {loading ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Creating...</>
+                ) : success ? (
+                  <><CheckCircle2 className="w-4 h-4 mr-2" />Account Created!</>
+                ) : (
+                  <><UserPlus className="w-4 h-4 mr-2" />Create Free Account</>
+                )}
+              </button>
+            </form>
+
+            <p className="text-center text-sm mt-6" style={{ color: "rgb(var(--muted))" }}>
+              Already have an account?{" "}
+              <Link href="/login" className="text-blue-500 hover:underline font-semibold">Sign in</Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
