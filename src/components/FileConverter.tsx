@@ -1,415 +1,360 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import {
-	Upload,
-	Download,
-	Loader2,
-	CheckCircle2,
-	XCircle,
-	ArrowLeft,
-	FileCheck,
-} from "lucide-react";
+import { Upload, Download, Loader2, CheckCircle2, XCircle, ArrowLeft, FileCheck, Share2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { trackConversion } from "./Analytics";
+import { canConvert, incrementQuota, getRemainingQuota } from "@/lib/quota";
+import { getUser, saveConversionHistory } from "@/lib/auth";
 
 interface FileConverterProps {
-	title: string;
-	description: string;
-	endpoint: string;
-	acceptedFormats: string;
-	icon?: React.ReactNode;
-	gradient?: string;
+  title: string;
+  description: string;
+  endpoint: string;
+  acceptedFormats: string;
+  icon?: React.ReactNode;
+  gradient?: string;
+  maxSizeMB?: number;
+  faqItems?: { q: string; a: string }[];
 }
 
 export default function FileConverter({
-	title,
-	description,
-	endpoint,
-	acceptedFormats,
-	icon,
-	gradient = "from-blue-600 to-purple-600",
+  title,
+  description,
+  endpoint,
+  acceptedFormats,
+  icon,
+  gradient = "from-blue-600 to-violet-600",
+  maxSizeMB = 50,
+  faqItems = [],
 }: FileConverterProps) {
-	const [file, setFile] = useState<File | null>(null);
-	const [uploading, setUploading] = useState(false);
-	const [progress, setProgress] = useState(0);
-	const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [fileName, setFileName] = useState<string | null>(null);
-	const [isDragging, setIsDragging] = useState(false);
-	const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [quota, setQuota] = useState({ remaining: 2, limit: 2 });
+  const [shared, setShared] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (e.target.files && e.target.files[0]) {
-			setFile(e.target.files[0]);
-			setError(null);
-			setDownloadUrl(null);
-		}
-	};
+  useEffect(() => {
+    const user = getUser();
+    const q = getRemainingQuota(!!user);
+    setQuota({ remaining: q.remaining, limit: q.limit });
+  }, []);
 
-	const handleDragOver = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragging(true);
-	};
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const f = e.target.files[0];
+      if (f.size > maxSizeMB * 1024 * 1024) {
+        setError(`File size exceeds ${maxSizeMB}MB limit`);
+        return;
+      }
+      setFile(f);
+      setError(null);
+      setDownloadUrl(null);
+    }
+  };
 
-	const handleDragLeave = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragging(false);
-	};
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const f = e.dataTransfer.files[0];
+      if (f.size > maxSizeMB * 1024 * 1024) { setError(`File size exceeds ${maxSizeMB}MB`); return; }
+      setFile(f);
+      setError(null);
+      setDownloadUrl(null);
+    }
+  };
 
-	const handleDrop = (e: React.DragEvent) => {
-		e.preventDefault();
-		setIsDragging(false);
+  const handleUpload = async () => {
+    if (!file) return;
+    const user = getUser();
+    if (!canConvert(!!user)) {
+      setError(user
+        ? "Daily limit reached (10/day). Upgrade to Pro for unlimited conversions."
+        : "Guest limit reached (2/day). Sign in for 10 conversions/day, or upgrade to Pro."
+      );
+      return;
+    }
 
-		if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-			setFile(e.dataTransfer.files[0]);
-			setError(null);
-			setDownloadUrl(null);
-		}
-	};
+    setUploading(true);
+    setProgress(0);
+    setError(null);
 
-	const handleUpload = async () => {
-		if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
 
-		setUploading(true);
-		setProgress(0);
-		setError(null);
+    try {
+      const response = await axios.post(`/api/convert${endpoint}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const pct = progressEvent.total ? Math.round((progressEvent.loaded * 100) / progressEvent.total) : 0;
+          setProgress(pct);
+        },
+      });
 
-		const formData = new FormData();
-		formData.append("file", file);
+      if (response.data.status === "success") {
+        setDownloadUrl(response.data.downloadUrl);
+        setFileName(response.data.fileName);
+        setProgress(100);
+        incrementQuota();
+        const q = getRemainingQuota(!!user);
+        setQuota({ remaining: q.remaining, limit: q.limit });
+        await trackConversion(endpoint.replace("/", ""));
+        // Save to history
+        saveConversionHistory({
+          type: endpoint.replace("/", ""),
+          fileName: response.data.fileName || file.name,
+          downloadUrl: response.data.downloadUrl,
+          timestamp: Date.now(),
+        });
+      } else {
+        setError(response.data.message || "Conversion failed");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "An error occurred during conversion");
+    } finally {
+      setUploading(false);
+    }
+  };
 
-		try {
-			const response = await axios.post(
-				`/api/convert${endpoint}`,
-				formData,
-				{
-					headers: {
-						"Content-Type": "multipart/form-data",
-					},
-					onUploadProgress: (progressEvent) => {
-						const percentCompleted = progressEvent.total
-							? Math.round(
-									(progressEvent.loaded * 100) /
-										progressEvent.total,
-								)
-							: 0;
-						setProgress(percentCompleted);
-					},
-				},
-			);
+  const handleDownload = async () => {
+    if (!downloadUrl) return;
+    try {
+      const response = await axios.get(downloadUrl, { responseType: "blob" });
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName || "converted-file";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setError("Failed to download file");
+    }
+  };
 
-			if (response.data.status === "success") {
-				setDownloadUrl(response.data.downloadUrl);
-				setFileName(response.data.fileName);
-				setProgress(100);
-				
-				// Track successful conversion in analytics
-				await trackConversion(endpoint.replace('/', ''));
-			} else {
-				setError(response.data.message || "Conversion failed");
-			}
-		} catch (err: any) {
-			setError(
-				err.response?.data?.message ||
-					"An error occurred during conversion",
-			);
-		} finally {
-			setUploading(false);
-		}
-	};
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: `Converted with unimorpher`, url: window.location.href });
+        setShared(true);
+        setTimeout(() => setShared(false), 2000);
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    }
+  };
 
-	const handleDownload = async () => {
-		if (!downloadUrl) return;
+  const resetConverter = () => {
+    setFile(null);
+    setDownloadUrl(null);
+    setError(null);
+    setProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
-		try {
-			const response = await axios.get(downloadUrl, {
-				responseType: "blob",
-			});
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i];
+  };
 
-			const blob = new Blob([response.data]);
-			const url = window.URL.createObjectURL(blob);
+  const quotaPct = ((quota.limit - quota.remaining) / quota.limit) * 100;
 
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = fileName || "converted-file";
-			document.body.appendChild(link);
-			link.click();
+  return (
+    <div className="min-h-screen" style={{ background: "rgb(var(--bg))" }}>
+      {/* Hero header */}
+      <div className={`bg-gradient-to-r ${gradient} text-white py-14`}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-8 transition-colors text-sm">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </Link>
+          <div className="flex items-center gap-5">
+            <div className="hidden sm:flex w-16 h-16 bg-white/20 backdrop-blur rounded-2xl items-center justify-center">
+              {icon || <Upload className="w-8 h-8" />}
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2" style={{ fontFamily: "Syne, sans-serif" }}>{title}</h1>
+              <p className="text-white/80">{description}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-			document.body.removeChild(link);
-			window.URL.revokeObjectURL(url);
-		} catch (err) {
-			setError("Failed to download file");
-		}
-	};
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 pb-16">
+        <div className="card p-6 md:p-10 animate-slide-up">
+          {/* Quota bar */}
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between text-xs mb-1.5" style={{ color: "rgb(var(--muted))" }}>
+                <span>Daily quota</span>
+                <span>{quota.remaining} / {quota.limit} remaining</span>
+              </div>
+              <div className="quota-bar">
+                <div className="quota-bar-fill" style={{ width: `${quotaPct}%` }} />
+              </div>
+            </div>
+            <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all" style={{ background: "rgb(var(--card-border))", color: "rgb(var(--fg))" }}>
+              <Share2 className="w-3.5 h-3.5" />
+              {shared ? "Copied!" : "Share"}
+            </button>
+          </div>
 
-	const resetConverter = () => {
-		setFile(null);
-		setDownloadUrl(null);
-		setError(null);
-		setProgress(0);
-		if (fileInputRef.current) {
-			fileInputRef.current.value = "";
-		}
-	};
+          {/* Upload area */}
+          {!downloadUrl && (
+            <div className="mb-6">
+              <div
+                className={`upload-area p-10 text-center ${isDragging ? "dragging" : ""}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {!file ? (
+                  <div className="flex flex-col items-center">
+                    <div className={`w-16 h-16 bg-gradient-to-r ${gradient} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
+                      <Upload className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-base font-semibold mb-1">Drop your file here, or <span className="text-blue-500">browse</span></p>
+                    <p className="text-sm mb-3" style={{ color: "rgb(var(--muted))" }}>Accepted: {acceptedFormats}</p>
+                    <span className="badge badge-blue">Max {maxSizeMB}MB</span>
+                  </div>
+                ) : (
+                  <div>
+                    <div className={`w-14 h-14 bg-gradient-to-r ${gradient} rounded-2xl flex items-center justify-center mb-3 mx-auto shadow-lg`}>
+                      <FileCheck className="w-7 h-7 text-white" />
+                    </div>
+                    <p className="font-semibold mb-1 truncate">{file.name}</p>
+                    <p className="text-sm mb-3" style={{ color: "rgb(var(--muted))" }}>{formatFileSize(file.size)}</p>
+                    <button onClick={(e) => { e.stopPropagation(); resetConverter(); }} className="text-sm text-blue-500 hover:text-blue-600 font-medium">
+                      Choose different file
+                    </button>
+                  </div>
+                )}
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept={acceptedFormats} />
+              </div>
+            </div>
+          )}
 
-	const formatFileSize = (bytes: number) => {
-		if (bytes === 0) return "0 Bytes";
-		const k = 1024;
-		const sizes = ["Bytes", "KB", "MB", "GB"];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return (
-			Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
-		);
-	};
+          {/* Progress */}
+          {uploading && (
+            <div className="mb-6 animate-fade-in">
+              <div className="flex justify-between text-sm mb-2">
+                <span style={{ color: "rgb(var(--muted))" }}>{progress < 100 ? "Converting..." : "Finalizing..."}</span>
+                <span className="font-semibold text-blue-500">{progress}%</span>
+              </div>
+              <div className="w-full rounded-full overflow-hidden" style={{ height: "8px", background: "rgb(var(--card-border))" }}>
+                <div className="progress-bar" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          )}
 
-	return (
-		<div className="min-h-screen gradient-bg">
-			{/* Header */}
-			<div className={`bg-gradient-to-r ${gradient} text-white py-16`}>
-				<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-					<Link
-						href="/"
-						className="inline-flex items-center text-white/90 hover:text-white mb-8 transition-colors"
-					>
-						<ArrowLeft className="w-5 h-5 mr-2" />
-						Back to Home
-					</Link>
+          {/* Error */}
+          {error && (
+            <div className="alert-error mb-6 animate-fade-in">
+              <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-sm text-red-700 dark:text-red-400">Error</p>
+                <p className="text-sm text-red-600 dark:text-red-300">{error}</p>
+                {quota.remaining === 0 && (
+                  <Link href="/signup" className="inline-block mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400 underline">
+                    Sign up for more conversions →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
 
-					<div className="flex items-center gap-6">
-						<div className="hidden sm:block">
-							{icon || <Upload className="w-16 h-16" />}
-						</div>
-						<div>
-							<h1 className="text-4xl md:text-5xl font-bold mb-3">
-								{title}
-							</h1>
-							<p className="text-xl text-white/90">
-								{description}
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
+          {/* Success */}
+          {downloadUrl && (
+            <div className="space-y-4 animate-scale-in mb-6">
+              <div className="alert-success">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm text-emerald-700 dark:text-emerald-400">Conversion successful!</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300">File will be auto-deleted in 30 minutes</p>
+                </div>
+              </div>
+              <div className="p-4 rounded-xl flex items-center justify-between" style={{ background: "rgb(var(--card-border))" }}>
+                <div className="truncate mr-3">
+                  <p className="font-medium text-sm truncate">{fileName}</p>
+                  <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>Ready to download</p>
+                </div>
+                <Download className="w-6 h-6 flex-shrink-0" style={{ color: "rgb(var(--muted))" }} />
+              </div>
+            </div>
+          )}
 
-			{/* Main Content */}
-			<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-				<div className="card p-8 md:p-12 animate-slide-up">
-					{/* File Upload Area */}
-					{!downloadUrl && (
-						<div className="mb-8">
-							<label className="block text-sm font-semibold text-gray-700 mb-3">
-								Choose Your File
-							</label>
-							<div
-								className={`upload-area p-12 text-center transition-all ${
-									isDragging ? "dragging scale-105" : ""
-								}`}
-								onDragOver={handleDragOver}
-								onDragLeave={handleDragLeave}
-								onDrop={handleDrop}
-								onClick={() => fileInputRef.current?.click()}
-							>
-								<div className="flex flex-col items-center">
-									{!file ? (
-										<>
-											<div
-												className={`w-20 h-20 bg-gradient-to-r ${gradient} rounded-2xl flex items-center justify-center mb-6 shadow-xl`}
-											>
-												<Upload className="w-10 h-10 text-white" />
-											</div>
-											<p className="text-lg font-semibold text-gray-700 mb-2">
-												Drop your file here, or{" "}
-												<span className="text-blue-600">
-													browse
-												</span>
-											</p>
-											<p className="text-sm text-gray-500 mb-4">
-												Supported formats:{" "}
-												{acceptedFormats}
-											</p>
-											<div className="inline-flex items-center px-4 py-2 bg-blue-50 rounded-lg text-sm text-blue-700">
-												<FileCheck className="w-4 h-4 mr-2" />
-												Maximum file size: 50MB
-											</div>
-										</>
-									) : (
-										<div className="w-full">
-											<div
-												className={`w-20 h-20 bg-gradient-to-r ${gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-xl`}
-											>
-												<FileCheck className="w-10 h-10 text-white" />
-											</div>
-											<div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
-												<p className="font-semibold text-gray-900 mb-2 truncate">
-													{file.name}
-												</p>
-												<p className="text-sm text-gray-500">
-													{formatFileSize(file.size)}
-												</p>
-											</div>
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													resetConverter();
-												}}
-												className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
-											>
-												Choose different file
-											</button>
-										</div>
-									)}
-								</div>
-								<input
-									ref={fileInputRef}
-									type="file"
-									className="hidden"
-									onChange={handleFileChange}
-									accept={acceptedFormats}
-								/>
-							</div>
-						</div>
-					)}
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {!downloadUrl ? (
+              <button
+                onClick={handleUpload}
+                disabled={!file || uploading || quota.remaining === 0}
+                className="btn btn-primary px-8 py-3.5 text-base flex-1"
+              >
+                {uploading ? (
+                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Converting...</>
+                ) : (
+                  <><Upload className="w-5 h-5 mr-2" /> Convert File</>
+                )}
+              </button>
+            ) : (
+              <>
+                <button onClick={handleDownload} className="btn btn-success px-8 py-3.5 text-base flex-1">
+                  <Download className="w-5 h-5 mr-2" /> Download File
+                </button>
+                <button onClick={resetConverter} className="btn btn-secondary px-6 py-3.5 text-base">
+                  Convert Another
+                </button>
+              </>
+            )}
+          </div>
 
-					{/* Progress Bar */}
-					{uploading && (
-						<div className="mb-8 animate-fade-in">
-							<div className="flex items-center justify-between mb-3">
-								<span className="text-sm font-semibold text-gray-700">
-									{progress < 100
-										? "Uploading and converting..."
-										: "Processing..."}
-								</span>
-								<span className="text-sm font-bold text-blue-600">
-									{progress}%
-								</span>
-							</div>
-							<div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-								<div
-									className="progress-bar h-3 shadow-lg"
-									style={{ width: `${progress}%` }}
-								></div>
-							</div>
-						</div>
-					)}
+          {/* Security note */}
+          <div className="mt-6 p-4 rounded-xl flex items-start gap-3" style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)" }}>
+            <AlertTriangle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+              Files are encrypted in transit and automatically deleted 30 minutes after conversion. We never store or share your files.
+            </p>
+          </div>
+        </div>
 
-					{/* Error Message */}
-					{error && (
-						<div className="alert-error mb-8 animate-fade-in">
-							<XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-							<div className="flex-1">
-								<p className="font-semibold text-red-800">
-									Conversion Failed
-								</p>
-								<p className="text-sm text-red-700 mt-1">
-									{error}
-								</p>
-							</div>
-						</div>
-					)}
+        {/* FAQ section */}
+        {faqItems.length > 0 && (
+          <div className="mt-8 card p-6">
+            <h2 className="text-xl font-bold mb-5" style={{ fontFamily: "Syne, sans-serif" }}>Frequently Asked Questions</h2>
+            <div className="space-y-4">
+              {faqItems.map((item, i) => (
+                <div key={i} className="pb-4" style={{ borderBottom: i < faqItems.length - 1 ? "1px solid rgb(var(--card-border))" : "none" }}>
+                  <p className="font-semibold text-sm mb-1.5">{item.q}</p>
+                  <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-					{/* Success Message */}
-					{downloadUrl && (
-						<div className="space-y-6 animate-scale-in">
-							<div className="alert-success">
-								<CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
-								<div className="flex-1">
-									<p className="font-semibold text-green-800">
-										Conversion Successful!
-									</p>
-									<p className="text-sm text-green-700 mt-1">
-										Your file is ready to download
-									</p>
-								</div>
-							</div>
-
-							<div className="card p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200">
-								<div className="flex items-center justify-between">
-									<div>
-										<p className="font-semibold text-gray-900 mb-1">
-											Converted File
-										</p>
-										<p className="text-sm text-gray-600 truncate">
-											{fileName}
-										</p>
-									</div>
-									<Download className="w-8 h-8 text-gray-400" />
-								</div>
-							</div>
-						</div>
-					)}
-
-					{/* Action Buttons */}
-					<div className="flex flex-col sm:flex-row gap-4 mt-8">
-						{!downloadUrl ? (
-							<button
-								onClick={handleUpload}
-								disabled={!file || uploading}
-								className="btn btn-primary px-8 py-4 text-lg flex-1"
-							>
-								{uploading ? (
-									<>
-										<Loader2 className="w-6 h-6 mr-3 animate-spin" />
-										Converting...
-									</>
-								) : (
-									<>
-										<Upload className="w-6 h-6 mr-3" />
-										Convert File
-									</>
-								)}
-							</button>
-						) : (
-							<>
-								<button
-									onClick={handleDownload}
-									className="btn btn-success px-8 py-4 text-lg flex-1"
-								>
-									<Download className="w-6 h-6 mr-3" />
-									Download File
-								</button>
-								<button
-									onClick={resetConverter}
-									className="btn btn-secondary px-8 py-4 text-lg sm:w-auto"
-								>
-									Convert Another
-								</button>
-							</>
-						)}
-					</div>
-
-					{/* Security Info */}
-					<div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
-						<div className="flex items-start gap-3">
-							<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-								<CheckCircle2 className="w-6 h-6 text-blue-600" />
-							</div>
-							<div>
-								<h4 className="font-semibold text-blue-900 mb-1">
-									Privacy & Security
-								</h4>
-								<p className="text-sm text-blue-800 leading-relaxed">
-									Your file will be automatically deleted from
-									our servers after 30 minutes. We take your
-									privacy seriously and never store your files
-									permanently.
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* Additional Info */}
-				<div className="mt-8 text-center pb-12">
-					<Link
-						href="/"
-						className="inline-flex items-center text-gray-600 hover:text-gray-900 font-medium transition-colors"
-					>
-						<ArrowLeft className="w-4 h-4 mr-2" />
-						Back to all converters
-					</Link>
-				</div>
-			</div>
-		</div>
-	);
+        <div className="mt-6 text-center">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm transition-colors nav-link">
+            <ArrowLeft className="w-4 h-4" /> Back to all converters
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }

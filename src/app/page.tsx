@@ -1,430 +1,234 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { FileText, Image, Music, FileSpreadsheet, ArrowRight, Zap, Shield, Smartphone, Star, Clock, LogIn, UserPlus, User, LogOut, Presentation, FileImage } from 'lucide-react'
-import Analytics from '@/components/Analytics'
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  FileText, Image, Music, FileSpreadsheet, ArrowRight, Zap, Shield, Smartphone,
+  Clock, Presentation, FileImage, FileArchive, Scissors,
+} from "lucide-react";
+import Analytics from "@/components/Analytics";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { isAdmin } from "@/lib/auth";
+
+const converters = [
+  { title: "PDF to Word", description: "Convert PDFs to editable Word files", icon: FileText, url: "/pdf-to-word", gradient: "from-blue-500 to-blue-600", badge: "Popular" },
+  { title: "Word to PDF", description: "Convert Word docs to PDF format", icon: FileText, url: "/word-to-pdf", gradient: "from-indigo-500 to-blue-600", badge: "Essential" },
+  { title: "JPG to PNG", description: "Convert JPG images to PNG", icon: Image, url: "/jpg-to-png", gradient: "from-emerald-500 to-green-600", badge: "Fast" },
+  { title: "PNG to JPG", description: "Convert PNG images to JPG", icon: Image, url: "/png-to-jpg", gradient: "from-teal-500 to-cyan-600", badge: "Quality" },
+  { title: "JPG to WebP", description: "Convert JPG to modern WebP format", icon: Image, url: "/jpg-to-webp", gradient: "from-sky-500 to-blue-600", badge: "Modern" },
+  { title: "MP4 to MP3", description: "Extract audio from video files", icon: Music, url: "/mp4-to-mp3", gradient: "from-violet-500 to-purple-600", badge: "HD Audio" },
+  { title: "Excel to PDF", description: "Convert spreadsheets to PDF", icon: FileSpreadsheet, url: "/excel-to-pdf", gradient: "from-orange-500 to-amber-600", badge: "Pro" },
+  { title: "PDF to Excel", description: "Extract tables from PDF to Excel", icon: FileSpreadsheet, url: "/pdf-to-excel", gradient: "from-green-600 to-emerald-600", badge: "Smart" },
+  { title: "PPT to PDF", description: "Convert PowerPoint to PDF", icon: Presentation, url: "/ppt-to-pdf", gradient: "from-red-500 to-rose-600", badge: "Pro" },
+  { title: "HEIC to JPG", description: "Convert iPhone HEIC images", icon: FileImage, url: "/heic-to-jpg", gradient: "from-indigo-500 to-violet-600", badge: "iOS" },
+  { title: "WebP to PNG", description: "Convert WebP to PNG format", icon: Image, url: "/webp-to-png", gradient: "from-cyan-500 to-blue-600", badge: "Modern" },
+  { title: "MP4 to GIF", description: "Convert video clips to GIF", icon: Music, url: "/mp4-to-gif", gradient: "from-pink-500 to-rose-600", badge: "Fun" },
+  { title: "WAV to MP3", description: "Convert WAV audio to MP3", icon: Music, url: "/wav-to-mp3", gradient: "from-violet-600 to-indigo-600", badge: "Audio" },
+  { title: "ZIP Extract", description: "Extract ZIP archives online", icon: FileArchive, url: "/zip-extract", gradient: "from-amber-500 to-orange-600", badge: "Utility" },
+  { title: "File Compress", description: "Compress and reduce file size", icon: Scissors, url: "/file-compress", gradient: "from-slate-600 to-gray-700", badge: "Save space" },
+];
+
+const categories = [
+  { name: "Documents", tools: converters.filter(c => ["pdf-to-word","word-to-pdf","pdf-to-excel","ppt-to-pdf","excel-to-pdf"].some(t => c.url.includes(t))) },
+  { name: "Images", tools: converters.filter(c => ["jpg","png","webp","heic"].some(t => c.url.includes(t))) },
+  { name: "Media & Utilities", tools: converters.filter(c => ["mp4","wav","zip","compress","gif"].some(t => c.url.includes(t))) },
+];
+
+const features = [
+  { icon: Zap, title: "Lightning Fast", description: "Convert files in seconds with our optimized engine", color: "text-blue-500", bg: "bg-blue-500/10" },
+  { icon: Shield, title: "Secure & Private", description: "Files auto-deleted after 30 minutes. Zero permanent storage.", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  { icon: Smartphone, title: "Mobile Friendly", description: "Works perfectly on any device — desktop, tablet, or mobile", color: "text-violet-500", bg: "bg-violet-500/10" },
+  { icon: Clock, title: "No Registration", description: "Start converting instantly. No account needed for basic use.", color: "text-orange-500", bg: "bg-orange-500/10" },
+];
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    { "@type": "Question", name: "Is unimorpher free?", acceptedAnswer: { "@type": "Answer", text: "Yes! Guests get 2 free conversions per day. Sign in for 10 per day." } },
+    { "@type": "Question", name: "Are my files secure?", acceptedAnswer: { "@type": "Answer", text: "Absolutely. Files are encrypted in transit and automatically deleted 30 minutes after conversion." } },
+    { "@type": "Question", name: "What is the file size limit?", acceptedAnswer: { "@type": "Answer", text: "Free users can upload files up to 50MB. Pro users get higher limits." } },
+  ],
+};
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null)
+  // Check admin status client-side (localStorage is only available in browser)
+  const [adminUser, setAdminUser] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    setUser(null)
-  }
-
-  const converters = [
-    {
-      title: 'PDF to Word',
-      description: 'Convert PDF documents to editable Word files',
-      icon: FileText,
-      url: '/pdf-to-word',
-      gradient: 'from-blue-500 to-blue-600',
-      iconBg: 'bg-blue-500',
-      badge: 'Most Popular',
-    },
-    {
-      title: 'Word to PDF',
-      description: 'Convert Word documents to PDF format',
-      icon: FileText,
-      url: '/word-to-pdf',
-      gradient: 'from-blue-600 to-indigo-600',
-      iconBg: 'bg-indigo-500',
-      badge: 'Essential',
-    },
-    {
-      title: 'JPG to PNG',
-      description: 'Convert JPG images to PNG format',
-      icon: Image,
-      url: '/jpg-to-png',
-      gradient: 'from-green-500 to-green-600',
-      iconBg: 'bg-green-500',
-      badge: 'Fast',
-    },
-    {
-      title: 'PNG to JPG',
-      description: 'Convert PNG images to JPG format',
-      icon: Image,
-      url: '/png-to-jpg',
-      gradient: 'from-teal-500 to-cyan-600',
-      iconBg: 'bg-teal-500',
-      badge: 'Quality',
-    },
-    {
-      title: 'MP4 to MP3',
-      description: 'Extract audio from video files',
-      icon: Music,
-      url: '/mp4-to-mp3',
-      gradient: 'from-purple-500 to-purple-600',
-      iconBg: 'bg-purple-500',
-      badge: 'HD Audio',
-    },
-    {
-      title: 'Excel to PDF',
-      description: 'Convert Excel spreadsheets to PDF',
-      icon: FileSpreadsheet,
-      url: '/excel-to-pdf',
-      gradient: 'from-orange-500 to-orange-600',
-      iconBg: 'bg-orange-500',
-      badge: 'Professional',
-    },
-    {
-      title: 'PDF to Excel',
-      description: 'Extract tables from PDF to Excel',
-      icon: FileSpreadsheet,
-      url: '/pdf-to-excel',
-      gradient: 'from-green-600 to-emerald-600',
-      iconBg: 'bg-emerald-500',
-      badge: 'Smart',
-    },
-    {
-      title: 'PPT to PDF',
-      description: 'Convert PowerPoint to PDF documents',
-      icon: Presentation,
-      url: '/ppt-to-pdf',
-      gradient: 'from-red-500 to-pink-600',
-      iconBg: 'bg-red-500',
-      badge: 'Pro',
-    },
-    {
-      title: 'HEIC to JPG',
-      description: 'Convert iPhone images to JPG',
-      icon: FileImage,
-      url: '/heic-to-jpg',
-      gradient: 'from-indigo-500 to-purple-600',
-      iconBg: 'bg-indigo-500',
-      badge: 'iOS',
-    },
-    {
-      title: 'WebP to PNG',
-      description: 'Convert WebP images to PNG format',
-      icon: Image,
-      url: '/webp-to-png',
-      gradient: 'from-cyan-500 to-blue-600',
-      iconBg: 'bg-cyan-500',
-      badge: 'Modern',
-    },
-  ]
-
-  const features = [
-    {
-      icon: Zap,
-      title: 'Lightning Fast',
-      description: 'Convert your files in seconds with our optimized conversion engine',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      icon: Shield,
-      title: 'Secure & Private',
-      description: 'Files are automatically deleted after 30 minutes for your security',
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-    {
-      icon: Smartphone,
-      title: 'Mobile Friendly',
-      description: 'Works perfectly on any device - desktop, tablet, or mobile',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-  ]
+    setAdminUser(isAdmin());
+  }, []);
 
   return (
-    <div className="flex-1">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                File Converter
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              {user ? (
-                <>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
-                    {user.picture ? (
-                      <img src={user.picture} alt={user.firstName} className="w-6 h-6 rounded-full" />
-                    ) : (
-                      <User className="w-4 h-4 text-gray-600" />
-                    )}
-                    <span className="text-sm font-medium text-gray-700">
-                      {user.firstName} {user.lastName}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <Navbar />
 
-      {/* Hero Section */}
-      <section className="gradient-bg relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute top-40 left-40 w-80 h-80 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      {/* Hero */}
+      <section className="relative overflow-hidden py-16 sm:py-24" style={{ background: "rgb(var(--bg))" }}>
+        {/* Blobs */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-10 animate-blob" style={{ background: "radial-gradient(circle, #3b82f6, #8b5cf6)" }} />
+          <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-10 animate-blob animation-delay-2000" style={{ background: "radial-gradient(circle, #10b981, #3b82f6)" }} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24">
-          {/* Header */}
-          <div className="text-center animate-fade-in">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full mb-8">
-              <Star className="w-4 h-4 text-blue-600 mr-2" />
-              <span className="text-sm font-medium text-blue-900">Free & Secure File Conversion</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Convert Your Files
-              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Instantly & Free
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed">
-              Professional file conversion made simple. No registration required, 
-              and your files are automatically deleted after 30 minutes.
-            </p>
-
-            {/* Analytics */}
-            <div className="mb-16">
-              <Analytics />
-            </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8 animate-fade-in" style={{ background: "rgb(var(--card))", border: "1px solid rgb(var(--card-border))" }}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span style={{ color: "rgb(var(--muted))" }}>Free for everyone · No signup required</span>
           </div>
 
-          {/* Converter Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
-            {converters.map((converter, index) => {
-              const Icon = converter.icon
-              return (
-                <Link
-                  key={converter.url}
-                  href={converter.url}
-                  className="group animate-scale-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="card card-hover h-full p-6 relative overflow-hidden">
-                    {/* Badge */}
-                    <div className="absolute top-4 right-4">
-                      <span className="text-xs font-semibold px-2 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full">
-                        {converter.badge}
-                      </span>
-                    </div>
-
-                    {/* Icon */}
-                    <div className={`w-14 h-14 ${converter.iconBg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-
-                    {/* Content */}
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {converter.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                      {converter.description}
-                    </p>
-
-                    {/* CTA */}
-                    <div className="flex items-center text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
-                      Convert now
-                      <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                    </div>
-
-                    {/* Gradient border on hover */}
-                    <div className={`absolute inset-0 bg-gradient-to-r ${converter.gradient} opacity-0 group-hover:opacity-10 transition-opacity rounded-2xl`}></div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Quick Info Banner */}
-          <div className="card p-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="w-5 h-5" />
-              <span className="font-semibold">Auto-Delete Protection</span>
-            </div>
-            <p className="text-blue-100">
-              All uploaded files are automatically deleted after 30 minutes to protect your privacy
-            </p>
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 leading-tight animate-slide-up" style={{ fontFamily: "Syne, sans-serif" }}>
+            Convert Files
+            <span className="block bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+              Instantly & Free
+            </span>
+          </h1>
+          <p className="text-lg sm:text-xl max-w-2xl mx-auto mb-10 animate-slide-up" style={{ color: "rgb(var(--muted))" }}>
+            PDF, images, videos, audio — convert any file format with ease. Fast, secure, and private.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in">
+            <Link href="#converters" className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-xl font-semibold hover:shadow-xl hover:-translate-y-0.5 transition-all">
+              Start Converting <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+            <Link href="/signup" className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5" style={{ background: "rgb(var(--card))", border: "1px solid rgb(var(--card-border))" }}>
+              Get 10 free/day →
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Our Converter?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We've built the fastest and most secure file conversion tool on the web
-            </p>
+      {/* Analytics — admin only, completely hidden from guests and regular users */}
+      {adminUser && (
+        <section className="py-10" style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))", borderBottom: "1px solid rgb(var(--card-border))" }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Analytics />
           </div>
+        </section>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
+      {/* Converters by category */}
+      <section id="converters" className="py-16" style={{ background: "rgb(var(--bg))" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {categories.map((cat, ci) => (
+            <div key={cat.name} className={ci > 0 ? "mt-14" : ""}>
+              <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: "Syne, sans-serif" }}>{cat.name}</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {cat.tools.map((c, i) => {
+                  const Icon = c.icon;
+                  return (
+                    <Link key={c.url} href={c.url} className="group animate-scale-in" style={{ animationDelay: `${i * 40}ms` }}>
+                      <div className="card card-hover h-full p-5 relative overflow-hidden">
+                        <div className="absolute top-3 right-3">
+                          <span className="badge badge-blue text-xs">{c.badge}</span>
+                        </div>
+                        <div className={`w-11 h-11 bg-gradient-to-br ${c.gradient} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-md`}>
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="font-bold text-sm mb-1 group-hover:text-blue-500 transition-colors">{c.title}</h3>
+                        <p className="text-xs leading-relaxed mb-3" style={{ color: "rgb(var(--muted))" }}>{c.description}</p>
+                        <div className="flex items-center text-blue-500 font-semibold text-xs">
+                          Convert <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${c.gradient} opacity-0 group-hover:opacity-5 transition-opacity rounded-2xl`} />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-16" style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>Why unimorpher?</h2>
+            <p style={{ color: "rgb(var(--muted))" }}>Built for speed, privacy, and simplicity</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((f, i) => {
+              const Icon = f.icon;
               return (
-                <div 
-                  key={index} 
-                  className="card p-8 text-center card-hover animate-slide-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className={`${feature.bgColor} w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
-                    <Icon className={`w-8 h-8 ${feature.color}`} />
+                <div key={i} className="card p-6 text-center card-hover animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
+                  <div className={`${f.bg} w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                    <Icon className={`w-6 h-6 ${f.color}`} />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {feature.description}
-                  </p>
+                  <h3 className="font-bold mb-2">{f.title}</h3>
+                  <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>{f.description}</p>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 gradient-bg">
+      {/* How it works */}
+      <section className="py-16" style={{ background: "rgb(var(--bg))" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              How It Works
-            </h2>
-            <p className="text-xl text-gray-600">
-              Convert your files in just 3 simple steps
-            </p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>How It Works</h2>
+            <p style={{ color: "rgb(var(--muted))" }}>Three simple steps to convert your files</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {[
-              { step: '1', title: 'Upload File', desc: 'Select or drag & drop your file' },
-              { step: '2', title: 'Convert', desc: 'Click convert and wait a few seconds' },
-              { step: '3', title: 'Download', desc: 'Download your converted file' },
-            ].map((item, index) => (
-              <div key={index} className="card p-8 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 shadow-xl">
-                  {item.step}
+              { n: "1", title: "Upload", desc: "Select or drag & drop your file. Supported formats shown on each converter page." },
+              { n: "2", title: "Convert", desc: "Click convert and our engine processes your file in seconds." },
+              { n: "3", title: "Download", desc: "Download your converted file instantly. It auto-deletes after 30 minutes." },
+            ].map((step, i) => (
+              <div key={i} className="text-center">
+                <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-2xl flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg" style={{ fontFamily: "Syne, sans-serif" }}>
+                  {step.n}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                <p className="text-gray-600">{item.desc}</p>
+                <h3 className="font-bold text-lg mb-2">{step.title}</h3>
+                <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">File Converter</h3>
-              <p className="text-gray-400">
-                Fast, secure, and free online file conversion tool.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">PDF Converters</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/pdf-to-word" className="hover:text-white transition-colors">PDF to Word</Link></li>
-                <li><Link href="/word-to-pdf" className="hover:text-white transition-colors">Word to PDF</Link></li>
-                <li><Link href="/pdf-to-excel" className="hover:text-white transition-colors">PDF to Excel</Link></li>
-                <li><Link href="/ppt-to-pdf" className="hover:text-white transition-colors">PPT to PDF</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Image Converters</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/jpg-to-png" className="hover:text-white transition-colors">JPG to PNG</Link></li>
-                <li><Link href="/png-to-jpg" className="hover:text-white transition-colors">PNG to JPG</Link></li>
-                <li><Link href="/heic-to-jpg" className="hover:text-white transition-colors">HEIC to JPG</Link></li>
-                <li><Link href="/webp-to-png" className="hover:text-white transition-colors">WebP to PNG</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Security</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  <span>SSL Encrypted</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>Auto-delete after 30 min</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  <span>No data storage</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2026 File Converter. All files are processed securely and deleted after 30 minutes.</p>
+      {/* CTA */}
+      <section className="py-16" style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))" }}>
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>Sign up for more conversions</h2>
+          <p className="mb-8" style={{ color: "rgb(var(--muted))" }}>Free accounts get 10 conversions/day. No credit card needed.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/signup" className="px-8 py-4 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-xl font-semibold hover:shadow-xl hover:-translate-y-0.5 transition-all">
+              Create Free Account
+            </Link>
+            <Link href="/login" className="px-8 py-4 rounded-xl font-semibold transition-all" style={{ background: "rgb(var(--bg))", border: "1px solid rgb(var(--card-border))" }}>
+              Already have an account?
+            </Link>
           </div>
         </div>
-      </footer>
+      </section>
 
-      <style jsx>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
-    </div>
-  )
+      {/* FAQ */}
+      <section className="py-16" style={{ background: "rgb(var(--bg))" }}>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold mb-8 text-center" style={{ fontFamily: "Syne, sans-serif" }}>FAQ</h2>
+          <div className="space-y-4">
+            {[
+              { q: "Is unimorpher free?", a: "Yes! Guests get 2 free conversions per day. Create a free account to get 10 per day. No credit card required." },
+              { q: "Are my files safe?", a: "Absolutely. All file transfers are encrypted (SSL). Files are automatically deleted 30 minutes after conversion and never shared or used for training." },
+              { q: "What file size limit applies?", a: "Free users can upload files up to 50MB. Pro plan users enjoy higher size limits." },
+              { q: "What formats are supported?", a: "We support PDF, DOCX, XLSX, PPTX, JPG, PNG, WEBP, HEIC, MP4, MP3, WAV, GIF, and ZIP formats." },
+              { q: "Do I need to install software?", a: "No! unimorpher works entirely in your browser. No downloads or installations required." },
+            ].map((item, i) => (
+              <div key={i} className="card p-5">
+                <p className="font-semibold mb-2">{item.q}</p>
+                <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </>
+  );
 }

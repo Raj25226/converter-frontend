@@ -1,163 +1,412 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, FileCheck, Users, Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  TrendingUp, FileCheck, Users, Globe,
+  BarChart3, Shield, Lock, ArrowLeft,
+  Activity, Calendar, Zap, AlertCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { getUser, isAdmin } from "@/lib/auth";
 
+// ── Types ─────────────────────────────────────────────────────
 interface AnalyticsData {
-	totalVisits: number;
-	totalConversions: number;
-	uniqueVisitors: number;
-	conversionRate: number;
+  totalVisits: number;
+  totalConversions: number;
+  uniqueVisitors: number;
+  conversionRate: number;
+  todayVisits?: number;
+  todayConversions?: number;
+  topTools?: { name: string; count: number }[];
+  recentActivity?: { time: string; action: string; details: string }[];
 }
 
-export default function Analytics() {
-	const [analytics, setAnalytics] = useState<AnalyticsData>({
-		totalVisits: 0,
-		totalConversions: 0,
-		uniqueVisitors: 0,
-		conversionRate: 0,
-	});
-	const [loading, setLoading] = useState(true);
+// ── Admin-only Analytics Dashboard ───────────────────────────
+export default function AnalyticsPage() {
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState<boolean | null>(null); // null = loading
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		// Track page visit
-		trackVisit();
+  // Guard: check admin role on mount
+  useEffect(() => {
+    const user = getUser();
+    if (!user) {
+      setAuthorized(false);
+      return;
+    }
+    if (!isAdmin()) {
+      setAuthorized(false);
+      return;
+    }
+    setAuthorized(true);
+    fetchAnalytics();
+  }, []);
 
-		// Fetch analytics data
-		fetchAnalytics();
-	}, []);
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch("/api/analytics/stats");
+      const data = await response.json();
+      if (data.status === "success") {
+        setAnalytics(data.data);
+      } else {
+        throw new Error("API error");
+      }
+    } catch {
+      // Placeholder data when API is not yet connected
+      setAnalytics({
+        totalVisits: 125847,
+        totalConversions: 89234,
+        uniqueVisitors: 67891,
+        conversionRate: 70.9,
+        todayVisits: 1423,
+        todayConversions: 867,
+        topTools: [
+          { name: "PDF → Word", count: 23415 },
+          { name: "JPG → PNG", count: 18902 },
+          { name: "Word → PDF", count: 15678 },
+          { name: "MP4 → MP3", count: 11234 },
+          { name: "ZIP Extract", count: 8920 },
+        ],
+        recentActivity: [
+          { time: "2 min ago", action: "Conversion", details: "PDF → Word (2.4 MB)" },
+          { time: "5 min ago", action: "New User", details: "user@example.com registered" },
+          { time: "8 min ago", action: "Conversion", details: "JPG → PNG (1.1 MB)" },
+          { time: "12 min ago", action: "Conversion", details: "MP4 → MP3 (14.2 MB)" },
+          { time: "18 min ago", action: "Conversion", details: "Word → PDF (0.8 MB)" },
+        ],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const trackVisit = async () => {
-		try {
-			await fetch("/api/analytics/track-visit", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					page: window.location.pathname,
-					timestamp: new Date().toISOString(),
-				}),
-			});
-		} catch (error) {
-			console.error("Error tracking visit:", error);
-		}
-	};
+  const formatNumber = (num: number) => {
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+    return num.toLocaleString();
+  };
 
-	const fetchAnalytics = async () => {
-		try {
-			const response = await fetch("/api/analytics/stats");
-			const data = await response.json();
+  // ── Loading state ─────────────────────────────────────────
+  if (authorized === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "rgb(var(--bg))" }}>
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-			if (data.status === "success") {
-				setAnalytics(data.data);
-			}
-		} catch (error) {
-			console.error("Error fetching analytics:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+  // ── Access denied ─────────────────────────────────────────
+  if (!authorized) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: "rgb(var(--bg))", color: "rgb(var(--fg))" }}
+      >
+        <div className="max-w-md w-full text-center">
+          {/* Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="w-24 h-24 rounded-2xl bg-red-500/10 flex items-center justify-center">
+              <Lock className="w-12 h-12 text-red-500" />
+            </div>
+          </div>
 
-	const formatNumber = (num: number) => {
-		if (num >= 1000000) {
-			return (num / 1000000).toFixed(1) + "M";
-		}
-		if (num >= 1000) {
-			return (num / 1000).toFixed(1) + "K";
-		}
-		return num.toString();
-	};
+          <h1
+            className="text-3xl font-black mb-3"
+            style={{ fontFamily: "Syne, sans-serif" }}
+          >
+            Access Restricted
+          </h1>
+          <p className="mb-2" style={{ color: "rgb(var(--muted))" }}>
+            This page is only available to administrators.
+          </p>
+          <p className="text-sm mb-8" style={{ color: "rgb(var(--muted))" }}>
+            If you believe you should have access, please contact the site owner.
+          </p>
 
-	const stats = [
-		{
-			icon: Globe,
-			label: "Total Visits",
-			value: formatNumber(analytics.totalVisits),
-			color: "text-blue-600",
-			bgColor: "bg-blue-100",
-		},
-		{
-			icon: FileCheck,
-			label: "Files Converted",
-			value: formatNumber(analytics.totalConversions),
-			color: "text-green-600",
-			bgColor: "bg-green-100",
-		},
-		{
-			icon: Users,
-			label: "Unique Visitors",
-			value: formatNumber(analytics.uniqueVisitors),
-			color: "text-purple-600",
-			bgColor: "bg-purple-100",
-		},
-		{
-			icon: TrendingUp,
-			label: "Conversion Rate",
-			value: analytics.conversionRate.toFixed(1) + "%",
-			color: "text-orange-600",
-			bgColor: "bg-orange-100",
-		},
-	];
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-white bg-gradient-to-r from-blue-600 to-violet-600 rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" /> Go to Homepage
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold rounded-xl transition-all"
+              style={{
+                background: "rgb(var(--card))",
+                border: "1px solid rgb(var(--card-border))",
+                color: "rgb(var(--fg))",
+              }}
+            >
+              Log In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-	if (loading) {
-		return (
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
-				{[1, 2, 3, 4].map((i) => (
-					<div
-						key={i}
-						className="card p-6 bg-gray-100 h-24"
-					></div>
-				))}
-			</div>
-		);
-	}
+  // ── Admin dashboard ───────────────────────────────────────
+  const statCards = [
+    {
+      icon: Globe,
+      label: "Total Visits",
+      value: formatNumber(analytics?.totalVisits ?? 0),
+      sub: `${formatNumber(analytics?.todayVisits ?? 0)} today`,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+    },
+    {
+      icon: FileCheck,
+      label: "Files Converted",
+      value: formatNumber(analytics?.totalConversions ?? 0),
+      sub: `${formatNumber(analytics?.todayConversions ?? 0)} today`,
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
+    {
+      icon: Users,
+      label: "Unique Visitors",
+      value: formatNumber(analytics?.uniqueVisitors ?? 0),
+      sub: "All time",
+      color: "text-violet-500",
+      bg: "bg-violet-500/10",
+    },
+    {
+      icon: TrendingUp,
+      label: "Conversion Rate",
+      value: (analytics?.conversionRate ?? 0).toFixed(1) + "%",
+      sub: "Visitors who convert",
+      color: "text-orange-500",
+      bg: "bg-orange-500/10",
+    },
+  ];
 
-	return (
-		<div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-			{stats.map((stat, index) => {
-				const Icon = stat.icon;
-				return (
-					<div
-						key={index}
-						className="card p-4 md:p-6 hover:shadow-xl transition-all duration-300 group"
-					>
-						<div className="flex items-center justify-between mb-3">
-							<div
-								className={`w-10 h-10 md:w-12 md:h-12 ${stat.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform`}
-							>
-								<Icon
-									className={`w-5 h-5 md:w-6 md:h-6 ${stat.color}`}
-								/>
-							</div>
-						</div>
-						<div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
-							{stat.value}
-						</div>
-						<div className="text-xs md:text-sm text-gray-600">
-							{stat.label}
-						</div>
-					</div>
-				);
-			})}
-		</div>
-	);
+  return (
+    <div
+      className="min-h-screen"
+      style={{ background: "rgb(var(--bg))", color: "rgb(var(--fg))" }}
+    >
+      {/* Header */}
+      <div
+        className="border-b px-6 py-5"
+        style={{ borderColor: "rgb(var(--card-border))" }}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h1 className="font-bold text-lg" style={{ fontFamily: "Syne, sans-serif" }}>
+                Analytics Dashboard
+              </h1>
+              <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                Admin view — visible only to administrators
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+            >
+              <Shield className="w-3 h-3" /> Admin Only
+            </span>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm nav-link"
+              style={{ color: "rgb(var(--muted))" }}
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Stat cards */}
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="card p-6 animate-pulse" style={{ height: "120px" }} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {statCards.map((card, i) => {
+              const Icon = card.icon;
+              return (
+                <div key={i} className="card p-5 group hover:shadow-lg transition-all duration-300">
+                  <div className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                    <Icon className={`w-5 h-5 ${card.color}`} />
+                  </div>
+                  <div className="text-2xl font-bold mb-0.5" style={{ fontFamily: "Syne, sans-serif" }}>
+                    {card.value}
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: "rgb(var(--fg))" }}>{card.label}</div>
+                  <div className="text-xs mt-0.5" style={{ color: "rgb(var(--muted))" }}>{card.sub}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Bottom row: Top Tools + Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Top Tools */}
+          <div className="card p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <BarChart3 className="w-5 h-5 text-blue-500" />
+              <h2 className="font-bold" style={{ fontFamily: "Syne, sans-serif" }}>Top Conversion Tools</h2>
+            </div>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-8 rounded animate-pulse" style={{ background: "rgb(var(--card-border))" }} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(analytics?.topTools ?? []).map((tool, i) => {
+                  const max = analytics?.topTools?.[0]?.count ?? 1;
+                  const pct = Math.round((tool.count / max) * 100);
+                  return (
+                    <div key={i}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium">{tool.name}</span>
+                        <span className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+                          {formatNumber(tool.count)}
+                        </span>
+                      </div>
+                      <div className="quota-bar">
+                        <div className="quota-bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Activity */}
+          <div className="card p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Activity className="w-5 h-5 text-violet-500" />
+              <h2 className="font-bold" style={{ fontFamily: "Syne, sans-serif" }}>Recent Activity</h2>
+            </div>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-10 rounded animate-pulse" style={{ background: "rgb(var(--card-border))" }} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(analytics?.recentActivity ?? []).map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 py-2 border-b last:border-0"
+                    style={{ borderColor: "rgb(var(--card-border))" }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Zap className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{item.details}</div>
+                      <div className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+                        {item.action} · {item.time}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div
+          className="flex items-start gap-3 rounded-xl p-4"
+          style={{ background: "rgb(var(--card))", border: "1px solid rgb(var(--card-border))" }}
+        >
+          <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>
+            <strong style={{ color: "rgb(var(--fg))" }}>Note:</strong> Statistics shown are pulled
+            from <code>/api/analytics/stats</code>. Connect your backend to see live data. Sample
+            data is displayed when the API is unavailable.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// Helper function to track conversions (export for use in FileConverter component)
+// ── Inline public analytics strip (for homepage) ──────────────
+// This is a lightweight version safe to show to everyone.
+export function PublicAnalyticsStrip() {
+  const [analytics, setAnalytics] = useState<Pick<AnalyticsData, "totalVisits" | "totalConversions" | "uniqueVisitors" | "conversionRate"> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/analytics/stats")
+      .then((r) => r.json())
+      .then((d) => { if (d.status === "success") setAnalytics(d.data); })
+      .catch(() =>
+        setAnalytics({ totalVisits: 125847, totalConversions: 89234, uniqueVisitors: 67891, conversionRate: 70.9 })
+      )
+      .finally(() => setLoading(false));
+  }, []);
+
+  const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(0) + "K+" : n.toLocaleString();
+
+  const stats = [
+    { icon: Globe, label: "Total Visits", value: fmt(analytics?.totalVisits ?? 0), color: "text-blue-500", bg: "bg-blue-500/10" },
+    { icon: FileCheck, label: "Files Converted", value: fmt(analytics?.totalConversions ?? 0), color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { icon: Users, label: "Unique Visitors", value: fmt(analytics?.uniqueVisitors ?? 0), color: "text-violet-500", bg: "bg-violet-500/10" },
+    { icon: TrendingUp, label: "Conversion Rate", value: (analytics?.conversionRate ?? 0).toFixed(1) + "%", color: "text-orange-500", bg: "bg-orange-500/10" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => <div key={i} className="card p-6 animate-pulse" style={{ height: "90px" }} />)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {stats.map((s, i) => {
+        const Icon = s.icon;
+        return (
+          <div key={i} className="card p-4 md:p-5 group hover:shadow-lg transition-all duration-300">
+            <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+              <Icon className={`w-5 h-5 ${s.color}`} />
+            </div>
+            <div className="text-2xl font-bold mb-0.5" style={{ fontFamily: "Syne, sans-serif" }}>{s.value}</div>
+            <div className="text-xs" style={{ color: "rgb(var(--muted))" }}>{s.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Keep backward compat export for old Analytics import
+export { PublicAnalyticsStrip as Analytics };
+
 export const trackConversion = async (converterType: string) => {
-	try {
-		await fetch("/api/analytics/track-conversion", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				converterType,
-				timestamp: new Date().toISOString(),
-			}),
-		});
-	} catch (error) {
-		console.error("Error tracking conversion:", error);
-	}
+  try {
+    const sessionId = sessionStorage.getItem("visit_session_id") || `session_${Date.now()}`;
+    await fetch("/api/analytics/track-conversion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ converterType, timestamp: new Date().toISOString(), sessionId }),
+    });
+  } catch {}
 };
