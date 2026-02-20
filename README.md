@@ -1,4 +1,4 @@
-# FileConvert Pro — Frontend
+# unimorpher — Frontend
 
 A modern, full-featured file conversion web application built with **Next.js 14**, **React 18**, and **TypeScript**. Supports PDF, image, audio, and video conversion with user accounts, daily quotas, analytics, and an admin dashboard.
 
@@ -214,7 +214,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 # ─── Optional ─────────────────────────────────────────────────────────────────
 
 # App display name and URL
-NEXT_PUBLIC_APP_NAME=FileConvert Pro
+NEXT_PUBLIC_APP_NAME=unimorpher
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # Google Analytics (uncomment to enable)
@@ -522,7 +522,7 @@ If the backend is unavailable, the analytics component falls back to placeholder
 | Feature | Implementation |
 |---|---|
 | Per-page titles | `export const metadata: Metadata = { title: "...", description: "..." }` in each `page.tsx` |
-| Default title template | `"%s \| FileConvert Pro"` set in root `layout.tsx` |
+| Default title template | `"%s \| unimorpher"` set in root `layout.tsx` |
 | FAQ schema | JSON-LD `FAQPage` schema in `src/app/page.tsx` |
 | Sitemap | `src/app/sitemap.ts` → auto-served at `/sitemap.xml` |
 | Robots.txt | `src/app/robots.ts` → auto-served at `/robots.txt` |
@@ -658,4 +658,4 @@ export default function Page() {
 
 ## License
 
-© FileConvert Pro
+© unimorpher

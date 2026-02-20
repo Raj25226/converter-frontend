@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Blog – File Conversion Tips & Guides | FileConvert Pro",
+  title: "Blog – File Conversion Tips & Guides | unimorpher",
   description: "Tips, tutorials, and guides for file conversion. Learn how to convert PDF, images, video, and audio files.",
 };
 

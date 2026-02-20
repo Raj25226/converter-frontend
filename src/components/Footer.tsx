@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Shield, Clock, Zap, Mail, Github, Twitter } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const converterLinks = [
   { label: "PDF to Word", href: "/pdf-to-word" },
@@ -31,39 +32,36 @@ export default function Footer() {
     <footer style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-10">
-          {/* Brand */}
+
+          {/* ── Brand ── */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">FC</span>
-              </div>
-              <span className="font-bold text-lg" style={{ fontFamily: "Syne, sans-serif" }}>
-                FileConvert Pro
-              </span>
-            </div>
+            <Link href="/" className="inline-flex mb-4">
+              <Logo size={32} showWordmark={true} animated={false} />
+            </Link>
             <p className="text-sm mb-6" style={{ color: "rgb(var(--muted))" }}>
-              Professional file conversion for everyone. Fast, secure, and private. No file is ever stored permanently.
+              Professional file conversion for everyone. Fast, secure, and private.
+              No file is ever stored permanently.
             </p>
             <div className="space-y-2">
               {[
                 { icon: Shield, text: "256-bit SSL Encryption" },
-                { icon: Clock, text: "Auto-delete after 30 minutes" },
-                { icon: Zap, text: "GDPR & Privacy Compliant" },
+                { icon: Clock,  text: "Auto-delete after 30 minutes" },
+                { icon: Zap,    text: "GDPR & Privacy Compliant" },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-2 text-xs" style={{ color: "rgb(var(--muted))" }}>
-                  <Icon className="w-3.5 h-3.5 text-blue-500" />
+                  <Icon className="w-3.5 h-3.5" style={{ color: "#6366f1" }} />
                   <span>{text}</span>
                 </div>
               ))}
             </div>
             <div className="flex items-center gap-3 mt-6">
-              <a href="mailto:support@fileconvert.pro" className="p-2 rounded-lg transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))", border: "1px solid rgb(var(--card-border))" }}>
+              <a href="mailto:support@unimorpher.com" className="p-2 rounded-lg transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))", border: "1px solid rgb(var(--card-border))" }}>
                 <Mail className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 rounded-lg transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))", border: "1px solid rgb(var(--card-border))" }}>
+              <a href="#" className="p-2 rounded-lg transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))", border: "1px solid rgb(var(--card-border))" }}>
                 <Twitter className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 rounded-lg transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))", border: "1px solid rgb(var(--card-border))" }}>
+              <a href="#" className="p-2 rounded-lg transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))", border: "1px solid rgb(var(--card-border))" }}>
                 <Github className="w-4 h-4" />
               </a>
             </div>
@@ -75,7 +73,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {converterLinks.map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-sm transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))" }}>
+                  <Link href={l.href} className="text-sm transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))" }}>
                     {l.label}
                   </Link>
                 </li>
@@ -89,7 +87,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {imageLinks.map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-sm transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))" }}>
+                  <Link href={l.href} className="text-sm transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))" }}>
                     {l.label}
                   </Link>
                 </li>
@@ -103,7 +101,7 @@ export default function Footer() {
             <ul className="space-y-2.5 mb-6">
               {mediaLinks.map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-sm transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))" }}>
+                  <Link href={l.href} className="text-sm transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))" }}>
                     {l.label}
                   </Link>
                 </li>
@@ -112,14 +110,14 @@ export default function Footer() {
             <h4 className="font-semibold text-sm mb-3">Company</h4>
             <ul className="space-y-2.5">
               {[
-                { label: "About", href: "/about" },
-                { label: "Blog", href: "/blog" },
-                { label: "Privacy Policy", href: "/privacy" },
-                { label: "Terms of Service", href: "/terms" },
-                { label: "Contact", href: "/contact" },
+                { label: "About",           href: "/about" },
+                { label: "Blog",            href: "/blog" },
+                { label: "Privacy Policy",  href: "/privacy" },
+                { label: "Terms of Service",href: "/terms" },
+                { label: "Contact",         href: "/contact" },
               ].map(l => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-sm transition-colors hover:text-blue-500" style={{ color: "rgb(var(--muted))" }}>
+                  <Link href={l.href} className="text-sm transition-colors hover:text-indigo-500" style={{ color: "rgb(var(--muted))" }}>
                     {l.label}
                   </Link>
                 </li>
@@ -128,14 +126,19 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-3" style={{ borderTop: "1px solid rgb(var(--card-border))" }}>
-          <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
-            &copy; {new Date().getFullYear()} FileConvert Pro. All rights reserved.
-          </p>
+          <div className="flex items-center gap-2">
+            {/* Tiny icon-only logo in copyright line */}
+            <Logo size={16} showWordmark={false} animated={false} />
+            <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
+              &copy; {new Date().getFullYear()} UniMorpher. All rights reserved.
+            </p>
+          </div>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="text-xs hover:text-blue-500 transition-colors" style={{ color: "rgb(var(--muted))" }}>Privacy</Link>
-            <Link href="/terms" className="text-xs hover:text-blue-500 transition-colors" style={{ color: "rgb(var(--muted))" }}>Terms</Link>
-            <Link href="/sitemap.xml" className="text-xs hover:text-blue-500 transition-colors" style={{ color: "rgb(var(--muted))" }}>Sitemap</Link>
+            <Link href="/privacy"     className="text-xs hover:text-indigo-500 transition-colors" style={{ color: "rgb(var(--muted))" }}>Privacy</Link>
+            <Link href="/terms"       className="text-xs hover:text-indigo-500 transition-colors" style={{ color: "rgb(var(--muted))" }}>Terms</Link>
+            <Link href="/sitemap.xml" className="text-xs hover:text-indigo-500 transition-colors" style={{ color: "rgb(var(--muted))" }}>Sitemap</Link>
           </div>
         </div>
       </div>

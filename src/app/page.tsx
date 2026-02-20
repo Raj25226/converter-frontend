@@ -9,6 +9,7 @@ import {
 import Analytics from "@/components/Analytics";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { isAdmin } from "@/lib/auth";
 
 const converters = [
   { title: "PDF to Word", description: "Convert PDFs to editable Word files", icon: FileText, url: "/pdf-to-word", gradient: "from-blue-500 to-blue-600", badge: "Popular" },
@@ -45,13 +46,20 @@ const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: [
-    { "@type": "Question", name: "Is FileConvert Pro free?", acceptedAnswer: { "@type": "Answer", text: "Yes! Guests get 2 free conversions per day. Sign in for 10 per day." } },
+    { "@type": "Question", name: "Is unimorpher free?", acceptedAnswer: { "@type": "Answer", text: "Yes! Guests get 2 free conversions per day. Sign in for 10 per day." } },
     { "@type": "Question", name: "Are my files secure?", acceptedAnswer: { "@type": "Answer", text: "Absolutely. Files are encrypted in transit and automatically deleted 30 minutes after conversion." } },
     { "@type": "Question", name: "What is the file size limit?", acceptedAnswer: { "@type": "Answer", text: "Free users can upload files up to 50MB. Pro users get higher limits." } },
   ],
 };
 
 export default function Home() {
+  // Check admin status client-side (localStorage is only available in browser)
+  const [adminUser, setAdminUser] = useState(false);
+
+  useEffect(() => {
+    setAdminUser(isAdmin());
+  }, []);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
@@ -91,12 +99,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Analytics */}
-      <section className="py-10" style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))", borderBottom: "1px solid rgb(var(--card-border))" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Analytics />
-        </div>
-      </section>
+      {/* Analytics — admin only, completely hidden from guests and regular users */}
+      {adminUser && (
+        <section className="py-10" style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))", borderBottom: "1px solid rgb(var(--card-border))" }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Analytics />
+          </div>
+        </section>
+      )}
 
       {/* Converters by category */}
       <section id="converters" className="py-16" style={{ background: "rgb(var(--bg))" }}>
@@ -136,7 +146,7 @@ export default function Home() {
       <section className="py-16" style={{ background: "rgb(var(--card))", borderTop: "1px solid rgb(var(--card-border))" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>Why FileConvert Pro?</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>Why unimorpher?</h2>
             <p style={{ color: "rgb(var(--muted))" }}>Built for speed, privacy, and simplicity</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -203,11 +213,11 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-8 text-center" style={{ fontFamily: "Syne, sans-serif" }}>FAQ</h2>
           <div className="space-y-4">
             {[
-              { q: "Is FileConvert Pro free?", a: "Yes! Guests get 2 free conversions per day. Create a free account to get 10 per day. No credit card required." },
+              { q: "Is unimorpher free?", a: "Yes! Guests get 2 free conversions per day. Create a free account to get 10 per day. No credit card required." },
               { q: "Are my files safe?", a: "Absolutely. All file transfers are encrypted (SSL). Files are automatically deleted 30 minutes after conversion and never shared or used for training." },
               { q: "What file size limit applies?", a: "Free users can upload files up to 50MB. Pro plan users enjoy higher size limits." },
               { q: "What formats are supported?", a: "We support PDF, DOCX, XLSX, PPTX, JPG, PNG, WEBP, HEIC, MP4, MP3, WAV, GIF, and ZIP formats." },
-              { q: "Do I need to install software?", a: "No! FileConvert Pro works entirely in your browser. No downloads or installations required." },
+              { q: "Do I need to install software?", a: "No! unimorpher works entirely in your browser. No downloads or installations required." },
             ].map((item, i) => (
               <div key={i} className="card p-5">
                 <p className="font-semibold mb-2">{item.q}</p>

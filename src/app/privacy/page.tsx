@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-export const metadata: Metadata = { title: "Privacy Policy | FileConvert Pro", description: "Learn how FileConvert Pro handles your data and protects your privacy." };
+export const metadata: Metadata = { title: "Privacy Policy | unimorpher", description: "Learn how unimorpher handles your data and protects your privacy." };
 
 export default function PrivacyPage() {
   return (

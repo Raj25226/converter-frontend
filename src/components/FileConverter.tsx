@@ -146,7 +146,7 @@ export default function FileConverter({
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title, text: `Converted with FileConvert Pro`, url: window.location.href });
+        await navigator.share({ title, text: `Converted with unimorpher`, url: window.location.href });
         setShared(true);
         setTimeout(() => setShared(false), 2000);
       } catch {}

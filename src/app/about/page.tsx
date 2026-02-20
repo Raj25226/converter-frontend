@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Shield, Zap, Users, Globe } from "lucide-react";
 
-export const metadata: Metadata = { title: "About FileConvert Pro", description: "Learn about FileConvert Pro, our mission, and our commitment to privacy and security." };
+export const metadata: Metadata = { title: "About unimorpher", description: "Learn about unimorpher, our mission, and our commitment to privacy and security." };
 
 export default function AboutPage() {
   return (
@@ -12,7 +12,7 @@ export default function AboutPage() {
       <div className="min-h-screen" style={{ background: "rgb(var(--bg))" }}>
         <div className="py-16" style={{ background: "rgb(var(--card))", borderBottom: "1px solid rgb(var(--card-border))" }}>
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>About FileConvert Pro</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>About unimorpher</h1>
             <p className="text-lg" style={{ color: "rgb(var(--muted))" }}>Fast, free, and private file conversion for everyone</p>
           </div>
         </div>
@@ -21,7 +21,7 @@ export default function AboutPage() {
           <div className="card p-8 mb-8">
             <h2 className="text-2xl font-bold mb-4" style={{ fontFamily: "Syne, sans-serif" }}>Our Mission</h2>
             <p className="leading-relaxed mb-4" style={{ color: "rgb(var(--muted))" }}>
-              FileConvert Pro was built with one goal: make file conversion accessible to everyone. We believe you shouldn't need to install software, pay subscriptions, or sacrifice your privacy just to convert a document.
+              unimorpher was built with one goal: make file conversion accessible to everyone. We believe you shouldn't need to install software, pay subscriptions, or sacrifice your privacy just to convert a document.
             </p>
             <p className="leading-relaxed" style={{ color: "rgb(var(--muted))" }}>
               Our platform supports the most common file conversion needs — PDF, images, audio, and video — with a clean, fast interface that works on any device.
