@@ -1,228 +1,46 @@
 "use client";
-
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Moon, Sun, LogOut, User, LayoutDashboard, Menu, X, Shield } from "lucide-react";
-import { getUser, logout, User as UserType } from "@/lib/auth";
+import { Moon, Sun, LogOut, User, Menu, X, ArrowUpRight } from "lucide-react";
+import { getUser, getToken, logout, User as UserType } from "@/lib/auth";
 import { getInitialTheme, applyTheme, Theme } from "@/lib/theme";
-import { getRemainingQuota } from "@/lib/quota";
+import { useRouter, usePathname } from "next/navigation";
 import Logo from "@/components/Logo";
 
 export default function Navbar() {
+  const router = useRouter(); const pathname = usePathname();
   const [user, setUser] = useState<UserType | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [quota, setQuota] = useState({ remaining: 0, limit: 0 });
-
+  const [quota, setQuota] = useState<{ remaining: number; limit: number } | null>(null);
   useEffect(() => {
-    setMounted(true);
-    const u = getUser();
-    setUser(u);
-    const t = getInitialTheme();
-    setTheme(t);
-    applyTheme(t);
-    const q = getRemainingQuota(!!u);
-    setQuota({ remaining: q.remaining, limit: q.limit });
+    setUser(getUser()); const initial = getInitialTheme(); setTheme(initial); applyTheme(initial);
+    const refresh = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch("/api/convert/quota", { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" });
+        if (response.ok) setQuota(await response.json());
+      } catch { setQuota(null); }
+    };
+    refresh(); window.addEventListener("conversion-quota-changed", refresh);
+    return () => window.removeEventListener("conversion-quota-changed", refresh);
   }, []);
-
-  const toggleTheme = () => {
-    const next: Theme = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    applyTheme(next);
-  };
-
-  const handleLogout = () => {
-    logout();
-    setUser(null);
-    window.location.href = "/";
-  };
-
-  if (!mounted) return null;
-
-  return (
-    <nav
-      className="sticky top-0 z-50 border-b backdrop-blur-xl"
-      style={{
-        background: "rgba(var(--bg), 0.88)",
-        borderColor: "rgb(var(--card-border))",
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-
-          {/* ── Logo ── */}
-          <Link href="/" className="flex items-center">
-            <Logo size={34} showWordmark={true} animated={true} />
-          </Link>
-
-          {/* ── Desktop Nav ── */}
-          <div className="hidden md:flex items-center gap-5">
-            <Link href="/#converters" className="nav-link">Tools</Link>
-            <Link href="/blog"        className="nav-link">Blog</Link>
-            <Link href="/about"       className="nav-link">About</Link>
-
-            {/* Quota pill */}
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs"
-              style={{
-                background: "rgb(var(--card))",
-                border: "1px solid rgb(var(--card-border))",
-                color: "rgb(var(--muted))",
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              {quota.remaining}/{quota.limit} left today
-            </div>
-
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg transition-colors hover:opacity-80"
-              style={{
-                background: "rgb(var(--card))",
-                border: "1px solid rgb(var(--card-border))",
-              }}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-              )}
-            </button>
-
-            {/* Auth */}
-            {user ? (
-              <div className="flex items-center gap-2">
-                {user.role === "admin" && (
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-                    style={{ color: "#f59e0b" }}
-                  >
-                    <Shield className="w-4 h-4" /> Admin
-                  </Link>
-                )}
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg nav-link"
-                >
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard
-                </Link>
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg"
-                  style={{
-                    background: "rgb(var(--card))",
-                    border: "1px solid rgb(var(--card-border))",
-                  }}
-                >
-                  {user.picture ? (
-                    <img src={user.picture} alt={user.firstName} className="w-5 h-5 rounded-full object-cover" />
-                  ) : (
-                    <User className="w-4 h-4" />
-                  )}
-                  <span style={{ color: "rgb(var(--fg))" }}>{user.firstName}</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-lg nav-link"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="px-4 py-2 text-sm font-medium rounded-xl nav-link"
-                >
-                  Log in
-                </Link>
-                <Link
-                  href="/signup"
-                  className="px-4 py-2 text-sm font-semibold text-white rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                  style={{
-                    background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                  }}
-                >
-                  Sign up free
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* ── Mobile controls ── */}
-          <div className="flex items-center gap-2 md:hidden">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg"
-              style={{ background: "rgb(var(--card))" }}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-              )}
-            </button>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-lg"
-              style={{ background: "rgb(var(--card))" }}
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* ── Mobile menu ── */}
-        {menuOpen && (
-          <div
-            className="md:hidden py-4 border-t"
-            style={{ borderColor: "rgb(var(--card-border))" }}
-          >
-            <div className="flex flex-col gap-1">
-              <Link href="/#converters" className="px-3 py-2 text-sm nav-link" onClick={() => setMenuOpen(false)}>Tools</Link>
-              <Link href="/blog"        className="px-3 py-2 text-sm nav-link" onClick={() => setMenuOpen(false)}>Blog</Link>
-              <Link href="/about"       className="px-3 py-2 text-sm nav-link" onClick={() => setMenuOpen(false)}>About</Link>
-
-              {user ? (
-                <>
-                  {user.role === "admin" && (
-                    <Link href="/admin" className="px-3 py-2 text-sm font-medium" style={{ color: "#f59e0b" }} onClick={() => setMenuOpen(false)}>
-                      Admin Panel
-                    </Link>
-                  )}
-                  <Link href="/dashboard" className="px-3 py-2 text-sm nav-link" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-                  <Link href="/profile"   className="px-3 py-2 text-sm nav-link" onClick={() => setMenuOpen(false)}>Profile</Link>
-                  <button
-                    onClick={() => { handleLogout(); setMenuOpen(false); }}
-                    className="px-3 py-2 text-sm text-left nav-link"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className="px-3 py-2 text-sm nav-link" onClick={() => setMenuOpen(false)}>Log in</Link>
-                  <Link
-                    href="/signup"
-                    className="mx-3 mt-1 px-4 py-2.5 text-sm font-semibold text-white rounded-xl text-center"
-                    style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Sign up free
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+  const toggleTheme = () => { const next = theme === "light" ? "dark" : "light"; setTheme(next); applyTheme(next); };
+  const handleLogout = () => { logout(); setUser(null); setQuota(null); setMenuOpen(false); router.push("/"); window.dispatchEvent(new Event("conversion-quota-changed")); };
+  const links = [{ href: "/", label: "Tools", active: pathname === "/" || toolsPage(pathname) }, { href: "/dashboard", label: "History", active: pathname === "/dashboard" }, { href: "/blog", label: "Guides", active: pathname.startsWith("/blog") }];
+  return <header className="sticky top-0 z-50 border-b" style={{ background: "rgb(var(--card))", borderColor: "rgb(var(--card-border))" }}>
+    <nav className="app-container" aria-label="Main navigation"><div className="h-[68px] flex items-center justify-between gap-5">
+      <div className="flex items-center gap-10"><Link href="/" aria-label="Unimorpher home"><Logo /></Link><div className="hidden lg:flex items-center gap-6">{links.map(link => <Link key={link.href} href={link.href} aria-current={link.active ? "page" : undefined} className={`nav-link ${link.active ? "active" : ""}`}>{link.label}</Link>)}{user?.role === "admin" && <Link className={`nav-link ${pathname === "/admin" ? "active" : ""}`} href="/admin">Admin</Link>}</div></div>
+      <div className="flex items-center gap-2 sm:gap-3">
+        {quota && <span className="hidden lg:flex items-center gap-2 text-xs muted mr-3"><span className="inline-block h-1 w-1 rounded-full" style={{ background: "rgb(var(--muted))" }} />{quota.remaining} of {quota.limit} left today</span>}
+        <button onClick={toggleTheme} className="icon-button" aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>
+        <div className="hidden lg:flex items-center gap-3 border-l pl-4" style={{ borderColor: "rgb(var(--card-border))" }}>{user ? <><Link href="/profile" className="flex items-center gap-2 text-sm font-medium">{user.picture ? <Image unoptimized width={28} height={28} src={user.picture} alt="" className="rounded-full h-7 w-7 object-cover" /> : <span className="icon-tile h-7 w-7"><User size={15} /></span>}<span className="max-w-[100px] truncate">{user.firstName}</span></Link><button className="icon-button" onClick={handleLogout} aria-label="Sign out"><LogOut size={16} /></button></> : <><Link className="nav-link px-1" href="/login">Sign in</Link><Link className="btn btn-primary px-4" href="/signup">Create account <ArrowUpRight size={14} /></Link></>}</div>
+        <button className="icon-button lg:hidden" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={21} /> : <Menu size={21} />}</button>
       </div>
+    </div>
+    {menuOpen && <div id="mobile-navigation" className="lg:hidden border-t py-4" style={{ borderColor: "rgb(var(--card-border))" }}><div className="flex flex-col gap-1">{links.map(link => <Link key={link.href} className="category-link" aria-current={link.active ? "page" : undefined} href={link.href} onClick={() => setMenuOpen(false)}>{link.label}</Link>)}{user?.role === "admin" && <Link className="category-link" href="/admin" onClick={() => setMenuOpen(false)}>Admin</Link>}{quota && <p className="text-xs muted px-3 py-3">{quota.remaining} of {quota.limit} conversions left today</p>}<div className="flex items-center gap-3 px-3 pt-3 border-t" style={{ borderColor: "rgb(var(--card-border))" }}>{user ? <><Link className="btn btn-secondary px-4" href="/profile" onClick={() => setMenuOpen(false)}>Account settings</Link><button className="nav-link" onClick={handleLogout}>Sign out</button></> : <><Link href="/signup" className="btn btn-primary px-4" onClick={() => setMenuOpen(false)}>Create account</Link><Link href="/login" className="nav-link" onClick={() => setMenuOpen(false)}>Sign in</Link></>}</div></div></div>}
     </nav>
-  );
+  </header>;
 }
+function toolsPage(path: string) { return /-to-|^\/(file-compress|zip-extract)$/.test(path); }

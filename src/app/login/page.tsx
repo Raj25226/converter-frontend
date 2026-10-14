@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import GoogleSignIn from "@/components/GoogleSignIn";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function LoginPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
+      <div className="min-h-[calc(100vh-68px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
         <div className="w-full max-w-md">
           <Link href="/" className="inline-flex items-center gap-2 text-sm mb-8 nav-link">
             <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -68,11 +69,9 @@ export default function LoginPage() {
 
           <div className="card p-8 sm:p-10">
             <div className="text-center mb-8">
-              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <LogIn className="w-7 h-7 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "Syne, sans-serif" }}>Welcome back</h2>
-              <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>Sign in to your account</p>
+
+              <h1 className="text-2xl font-semibold mb-2" style={{ fontFamily: "inherit" }}>Sign in</h1>
+              <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>Continue to your conversion workspace.</p>
             </div>
 
             {error && (
@@ -98,40 +97,37 @@ export default function LoginPage() {
               </div>
             )}
 
+            <GoogleSignIn />
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Email Address</label>
+                <label htmlFor="login-email" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-field pl-10" placeholder="you@example.com" />
+                  <input id="login-email" name="email" autoComplete="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-field pl-10" placeholder="you@example.com" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Password</label>
+                <label htmlFor="login-password" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                  <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="input-field pl-10" placeholder="••••••••" />
+                  <input id="login-password" name="password" autoComplete="current-password" type="password" required value={password} onChange={e => setPassword(e.target.value)} className="input-field pl-10" placeholder="••••••••" />
                 </div>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-3.5 h-3.5 rounded" />
-                  <span style={{ color: "rgb(var(--muted))" }}>Remember me</span>
-                </label>
-                <Link href="/forgot-password" className="text-blue-500 hover:underline font-medium">Forgot password?</Link>
+              <div className="flex items-center justify-end text-xs">
+                <Link href="/forgot-password" className="accent hover:underline font-medium">Forgot password?</Link>
               </div>
               <button type="submit" disabled={loading} className="w-full btn btn-primary py-3.5">
                 {loading ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> Signing in...</>
                 ) : (
-                  <><LogIn className="w-4 h-4 mr-2" /> Sign In</>
+                  <><LogIn className="w-4 h-4 mr-2" /> Sign in</>
                 )}
               </button>
             </form>
 
             <p className="text-center text-sm mt-6" style={{ color: "rgb(var(--muted))" }}>
-              Don't have an account?{" "}
-              <Link href="/signup" className="text-blue-500 hover:underline font-semibold">Sign up free</Link>
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="accent hover:underline font-semibold">Sign up free</Link>
             </p>
           </div>
         </div>

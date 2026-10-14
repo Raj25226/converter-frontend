@@ -7,20 +7,11 @@ module.exports = {
   ],
   theme: {
     extend: {
-      colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-        },
-      },
+      colors: Object.fromEntries(['primary', 'brand'].map(name => [name, {
+        50: '#f0f6f1', 100: '#e1eee3', 200: '#c5ddcb', 300: '#9bc4a8',
+        400: '#67a780', 500: '#327f5d', 600: '#185f46', 700: '#114a36',
+        800: '#123e2e', 900: '#123326', 950: '#0a1f17',
+      }])),
     },
   },
   plugins: [],

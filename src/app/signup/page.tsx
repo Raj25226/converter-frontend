@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, UserPlus, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import GoogleSignIn from "@/components/GoogleSignIn";
 
 function PasswordStrength({ password }: { password: string }) {
   const checks = [
@@ -81,7 +82,7 @@ export default function SignupPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
+      <div className="min-h-[calc(100vh-68px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
         <div className="w-full max-w-md">
           <Link href="/" className="inline-flex items-center gap-2 text-sm mb-8 nav-link">
             <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -89,10 +90,8 @@ export default function SignupPage() {
 
           <div className="card p-8 sm:p-10">
             <div className="text-center mb-8">
-              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <UserPlus className="w-7 h-7 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "Syne, sans-serif" }}>Create Account</h2>
+
+              <h1 className="text-2xl font-semibold mb-2" style={{ fontFamily: "inherit" }}>Create account</h1>
               <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>Get 10 free conversions per day</p>
             </div>
 
@@ -114,48 +113,49 @@ export default function SignupPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <GoogleSignIn text="signup_with" />
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>First Name</label>
+                  <label htmlFor="signup-firstName" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>First Name</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                    <input name="firstName" type="text" required value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder="John" />
+                    <input id="signup-firstName" autoComplete="given-name" name="firstName" type="text" required value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder="John" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Last Name</label>
-                  <input name="lastName" type="text" required value={form.lastName} onChange={handleChange} className="input-field" placeholder="Doe" />
+                  <label htmlFor="signup-lastName" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Last Name</label>
+                  <input id="signup-lastName" autoComplete="family-name" name="lastName" type="text" required value={form.lastName} onChange={handleChange} className="input-field" placeholder="Doe" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                  <input name="email" type="email" required value={form.email} onChange={handleChange} className="input-field pl-10" placeholder="you@example.com" />
+                  <input id="signup-email" autoComplete="email" name="email" type="email" required value={form.email} onChange={handleChange} className="input-field pl-10" placeholder="you@example.com" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Password</label>
+                <label htmlFor="signup-password" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                  <input name="password" type="password" required value={form.password} onChange={handleChange} className="input-field pl-10" placeholder="••••••••" minLength={8} />
+                  <input id="signup-password" autoComplete="new-password" name="password" type="password" required value={form.password} onChange={handleChange} className="input-field pl-10" placeholder="••••••••" minLength={8} />
                 </div>
                 <PasswordStrength password={form.password} />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Confirm Password</label>
+                <label htmlFor="signup-confirmPassword" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Confirm Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                  <input name="confirmPassword" type="password" required value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder="••••••••" />
+                  <input id="signup-confirmPassword" autoComplete="new-password" name="confirmPassword" type="password" required value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder="••••••••" />
                 </div>
                 {form.confirmPassword && form.password !== form.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">Passwords don't match</p>
+                  <p className="text-xs text-red-500 mt-1">Passwords don&apos;t match</p>
                 )}
               </div>
               <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
                 By signing up, you agree to our{" "}
-                <Link href="/terms" className="text-blue-500 hover:underline">Terms</Link> and{" "}
-                <Link href="/privacy" className="text-blue-500 hover:underline">Privacy Policy</Link>
+                <Link href="/terms" className="accent hover:underline">Terms</Link> and{" "}
+                <Link href="/privacy" className="accent hover:underline">Privacy Policy</Link>
               </p>
               <button type="submit" disabled={loading || success} className="w-full btn btn-primary py-3.5">
                 {loading ? (
@@ -170,7 +170,7 @@ export default function SignupPage() {
 
             <p className="text-center text-sm mt-6" style={{ color: "rgb(var(--muted))" }}>
               Already have an account?{" "}
-              <Link href="/login" className="text-blue-500 hover:underline font-semibold">Sign in</Link>
+              <Link href="/login" className="accent hover:underline font-semibold">Sign in</Link>
             </p>
           </div>
         </div>

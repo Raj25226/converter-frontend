@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, User, Mail, Lock, Save, CheckCircle2, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -24,7 +25,7 @@ export default function ProfilePage() {
     if (!u) { router.push("/login"); return; }
     setUser(u);
     setForm({ firstName: u.firstName, lastName: u.lastName, email: u.email });
-  }, []);
+  }, [router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +39,8 @@ export default function ProfilePage() {
       });
       const data = await res.json();
       if (res.ok) {
-        const updated = { ...user, ...form };
+        const updated = data.user;
+        if (data.token) localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(updated));
         setUser(updated);
         setSuccess("Profile updated successfully!");
@@ -55,7 +57,7 @@ export default function ProfilePage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) { setError("Passwords don't match"); return; }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) { setError("Passwords do not match"); return; }
     if (passwordForm.newPassword.length < 8) { setError("Password must be at least 8 characters"); return; }
     setSaving(true); setError(""); setSuccess("");
     try {
@@ -67,8 +69,8 @@ export default function ProfilePage() {
       const data = await res.json();
       if (res.ok) {
         setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-        setSuccess("Password changed successfully!");
-        setTimeout(() => setSuccess(""), 3000);
+        logout();
+        router.push("/login");
       } else {
         setError(data.message || "Failed to change password");
       }
@@ -89,7 +91,7 @@ export default function ProfilePage() {
           <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm mb-6 nav-link">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold mb-8" style={{ fontFamily: "Syne, sans-serif" }}>Profile Settings</h1>
+          <h1 className="text-3xl font-bold mb-8" style={{ fontFamily: "inherit" }}>Profile Settings</h1>
 
           {success && (
             <div className="alert-success mb-6 animate-fade-in">
@@ -107,11 +109,11 @@ export default function ProfilePage() {
           {/* Profile info */}
           <div className="card p-6 mb-6">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-[rgb(var(--primary))]   flex items-center justify-center">
                 {user.picture ? (
-                  <img src={user.picture} alt={user.firstName} className="w-full h-full rounded-2xl object-cover" />
+                  <Image unoptimized width={48} height={48} src={user.picture} alt={user.firstName} className="w-full h-full rounded-2xl object-cover" />
                 ) : (
-                  <span className="text-white text-2xl font-bold">{user.firstName?.[0]}</span>
+                  <span className="text-[rgb(var(--on-primary))] text-2xl font-bold">{user.firstName?.[0]}</span>
                 )}
               </div>
               <div>
@@ -183,7 +185,7 @@ export default function ProfilePage() {
           {/* Danger zone */}
           <div className="card p-6 mt-6" style={{ borderColor: "rgba(239,68,68,0.2)" }}>
             <h3 className="font-semibold text-red-500 text-sm mb-3">Danger Zone</h3>
-            <p className="text-sm mb-4" style={{ color: "rgb(var(--muted))" }}>Once you log out, you'll need your credentials to sign back in.</p>
+            <p className="text-sm mb-4" style={{ color: "rgb(var(--muted))" }}>Once you log out, you&apos;ll need your credentials to sign back in.</p>
             <button
               onClick={() => { logout(); router.push("/"); }}
               className="btn btn-danger px-6 py-2.5 text-sm"

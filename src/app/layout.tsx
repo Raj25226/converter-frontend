@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import VisitTracker from "@/components/VisitTracker";
 
 export const metadata: Metadata = {
   title: {
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     "file converter, pdf to word, jpg to png, mp4 to mp3, excel to pdf, free converter, online converter, unimorpher",
   authors: [{ name: "UniMorpher" }],
   creator: "UniMorpher",
-  metadataBase: new URL("https://unimorpher.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   openGraph: {
     title: "UniMorpher – Free Online File Converter",
     description: "Convert PDF, images, videos and documents online for free.",
@@ -41,12 +42,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap"
-          rel="stylesheet"
-        />
         {/* SVG favicon — works in Chrome, Firefox, Edge, Safari 12+
             Place favicon.svg in your /public folder.
             Do NOT use icon.tsx — next/og breaks on Windows (drive letter URL bug). */}
@@ -62,6 +57,7 @@ export default function RootLayout({
         className="min-h-screen flex flex-col antialiased"
         style={{ background: "rgb(var(--bg))", color: "rgb(var(--fg))" }}
       >
+        <VisitTracker />
         {children}
       </body>
     </html>

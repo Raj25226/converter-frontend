@@ -10,7 +10,7 @@ export default function TermsPage() {
       <Navbar />
       <div className="min-h-screen py-16" style={{ background: "rgb(var(--bg))" }}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: "Syne, sans-serif" }}>Terms of Service</h1>
+          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: "inherit" }}>Terms of Service</h1>
           <p className="mb-10 text-sm" style={{ color: "rgb(var(--muted))" }}>Last updated: January 1, 2026</p>
 
           <div className="space-y-8">
@@ -25,7 +25,7 @@ export default function TermsPage() {
               { title: "8. Contact", content: "For questions about these terms, contact us at support@fileconvert.pro." },
             ].map((section) => (
               <div key={section.title}>
-                <h2 className="text-xl font-bold mb-3" style={{ fontFamily: "Syne, sans-serif" }}>{section.title}</h2>
+                <h2 className="text-xl font-bold mb-3" style={{ fontFamily: "inherit" }}>{section.title}</h2>
                 <p className="leading-relaxed" style={{ color: "rgb(var(--muted))" }}>{section.content}</p>
               </div>
             ))}

@@ -1,113 +1,31 @@
 "use client";
-
-import { useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
+import Script from "next/script";
 import { useRouter } from "next/navigation";
 
-declare global {
-	interface Window {
-		google?: any;
-	}
-}
-
-interface GoogleSignInProps {
-	onSuccess?: (response: any) => void;
-	onError?: (error: any) => void;
-	text?: "signin_with" | "signup_with" | "continue_with";
-	className?: string;
-}
-
-export default function GoogleSignIn({
-	onSuccess,
-	onError,
-	text = "signin_with",
-	className = "",
-}: GoogleSignInProps) {
-	const router = useRouter();
-
-	useEffect(() => {
-		// Load Google Sign-In script
-		const script = document.createElement("script");
-		script.src = "https://accounts.google.com/gsi/client";
-		script.async = true;
-		script.defer = true;
-		document.body.appendChild(script);
-
-		script.onload = () => {
-			if (window.google) {
-				window.google.accounts.id.initialize({
-					client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-					callback: handleCredentialResponse,
-				});
-
-				window.google.accounts.id.renderButton(
-					document.getElementById("google-signin-button"),
-					{
-						theme: "outline",
-						size: "large",
-						text: text,
-						width: "100%",
-						logo_alignment: "left",
-					},
-				);
-			}
-		};
-
-		return () => {
-			document.body.removeChild(script);
-		};
-	}, []);
-
-	const handleCredentialResponse = async (response: any) => {
-		try {
-			// Send the credential to your backend
-			const res = await fetch("/api/auth/google", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					credential: response.credential,
-				}),
-			});
-
-			const data = await res.json();
-
-			if (data.status === "success") {
-				// Store token in localStorage
-				localStorage.setItem("token", data.token);
-				localStorage.setItem(
-					"user",
-					JSON.stringify({
-						id: data.userId,
-						email: data.email,
-						firstName: data.firstName,
-						lastName: data.lastName,
-						role: data.role,
-						picture: data.picture,
-					}),
-				);
-
-				// Call onSuccess callback if provided
-				if (onSuccess) {
-					onSuccess(data);
-				}
-
-				// Redirect to home page
-				router.push("/");
-			} else {
-				throw new Error(data.message || "Google sign-in failed");
-			}
-		} catch (error) {
-			console.error("Google sign-in error:", error);
-			if (onError) {
-				onError(error);
-			}
-		}
-	};
-
-	return (
-		<div className={className}>
-			<div id="google-signin-button" className="w-full"></div>
-		</div>
-	);
+declare global { interface Window { google?: any; } }
+interface Props { text?: "signin_with" | "signup_with" | "continue_with"; className?: string; }
+export default function GoogleSignIn({ text = "continue_with", className = "" }: Props) {
+  const router = useRouter();
+  const button = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const credential = useCallback(async (response: { credential: string }) => {
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(response) });
+      const data = await res.json();
+      if (!res.ok || !data.token || !data.user) throw new Error(data.message || "Google sign-in failed.");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      router.push("/dashboard");
+    } catch (e) { setError(e instanceof Error ? e.message : "Unable to sign in."); }
+  }, [router]);
+  const initialize = () => {
+    if (!window.google || !button.current || !clientId) return;
+    window.google.accounts.id.initialize({ client_id: clientId, callback: credential });
+    window.google.accounts.id.renderButton(button.current, { theme: "outline", size: "large", text, width: 300 });
+  };
+  if (!clientId) return null;
+  return <div className={className}><Script src="https://accounts.google.com/gsi/client" onReady={initialize} onError={() => setError("Google sign-in could not load. Use email sign-in below.")} /><div ref={button} className="flex justify-center" />{error && <p role="alert" className="text-sm text-red-600 mt-3">{error}</p>}<p className="text-center text-xs my-5" style={{ color: "rgb(var(--muted))" }}>or continue with email</p></div>;
 }

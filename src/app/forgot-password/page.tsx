@@ -29,18 +29,16 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
+      <div className="min-h-[calc(100vh-68px)] flex items-center justify-center px-4 py-12" style={{ background: "rgb(var(--bg))" }}>
         <div className="w-full max-w-md">
           <Link href="/login" className="inline-flex items-center gap-2 text-sm mb-8 nav-link">
             <ArrowLeft className="w-4 h-4" /> Back to Login
           </Link>
           <div className="card p-8 sm:p-10">
             <div className="text-center mb-8">
-              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Mail className="w-7 h-7 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: "Syne, sans-serif" }}>Forgot Password?</h2>
-              <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>Enter your email and we'll send a reset link</p>
+
+              <h1 className="text-2xl font-semibold mb-2" style={{ fontFamily: "inherit" }}>Forgot Password?</h1>
+              <p className="text-sm" style={{ color: "rgb(var(--muted))" }}>Enter your email and we&apos;ll send a reset link</p>
             </div>
 
             {success ? (
@@ -60,10 +58,10 @@ export default function ForgotPasswordPage() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Email Address</label>
+                  <label htmlFor="recovery-email" className="block text-xs font-semibold mb-1.5" style={{ color: "rgb(var(--muted))" }}>Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgb(var(--muted))" }} />
-                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-field pl-10" placeholder="you@example.com" />
+                    <input id="recovery-email" autoComplete="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-field pl-10" placeholder="you@example.com" />
                   </div>
                 </div>
                 <button type="submit" disabled={loading} className="w-full btn btn-primary py-3.5">

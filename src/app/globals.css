@@ -2,190 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap');
-
 @layer base {
   :root {
-    --bg: 255 255 255;
-    --fg: 15 15 25;
-    --card: 248 249 252;
-    --card-border: 226 232 240;
-    --muted: 100 116 139;
-    --primary: 59 130 246;
-    --primary-dark: 37 99 235;
-    --accent: 139 92 246;
+    --bg: 247 248 245;
+    --fg: 33 43 39;
+    --card: 255 255 255;
+    --card-border: 221 226 219;
+    --muted: 100 111 104;
+    --primary: 24 95 70;
+    --primary-dark: 17 74 54;
+    --accent: 24 95 70;
+    --subtle: 238 242 236;
+    --on-primary: 255 255 255;
+    color-scheme: light;
   }
-
   .dark {
-    --bg: 10 12 20;
-    --fg: 240 244 255;
-    --card: 18 22 35;
-    --card-border: 38 45 65;
-    --muted: 148 163 184;
-    --primary: 96 165 250;
-    --primary-dark: 59 130 246;
-    --accent: 167 139 250;
+    --bg: 20 26 23;
+    --fg: 232 238 231;
+    --card: 27 34 30;
+    --card-border: 55 65 58;
+    --muted: 165 178 168;
+    --primary: 161 209 179;
+    --primary-dark: 184 225 197;
+    --accent: 161 209 179;
+    --subtle: 35 44 38;
+    --on-primary: 19 41 28;
+    color-scheme: dark;
   }
-}
-
-@layer base {
-  * {
-    box-sizing: border-box;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 88px; }
   body {
-    background-color: rgb(var(--bg));
+    margin: 0;
+    background: rgb(var(--bg));
     color: rgb(var(--fg));
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+  h1, h2, h3 { letter-spacing: -.025em; line-height: 1.25; }
+  button, input, select, textarea { font: inherit; }
+  button, a, input, select, summary { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), summary { cursor: pointer; }
+  :focus-visible { outline: 2px solid rgb(var(--primary)); outline-offset: 4px; }
+  ::selection { background: rgb(var(--primary) / .18); }
+  input::placeholder { color: rgb(var(--muted)); opacity: .8; }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-offset-2
-      disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium;
+    min-height: 40px;
+    transition: background-color .15s, border-color .15s, color .15s;
   }
-
-  .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-lg hover:shadow-xl hover:-translate-y-0.5;
-  }
-
-  .btn-secondary {
-    background-color: rgb(var(--card));
-    color: rgb(var(--fg));
-    border: 1px solid rgb(var(--card-border));
-    @apply hover:opacity-80 focus:ring-gray-400;
-  }
-
-  .btn-success {
-    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-lg hover:shadow-xl hover:-translate-y-0.5;
-  }
-
-  .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
-  }
-
-  .card {
-    background-color: rgb(var(--card));
-    border: 1px solid rgb(var(--card-border));
-    @apply rounded-2xl shadow-sm transition-all duration-300;
-  }
-
-  .card-hover {
-    @apply hover:shadow-xl hover:-translate-y-1;
-  }
-
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary, .btn-success { background: rgb(var(--primary)); color: rgb(var(--on-primary)); border: 1px solid transparent; }
+  .btn-primary:hover:not(:disabled), .btn-success:hover:not(:disabled) { background: rgb(var(--primary-dark)); }
+  .btn-secondary { background: rgb(var(--card)); border: 1px solid rgb(var(--card-border)); color: rgb(var(--fg)); }
+  .btn-secondary:hover:not(:disabled) { background: rgb(var(--subtle)); border-color: rgb(var(--muted) / .4); }
+  .btn-danger { @apply bg-red-700 text-white hover:bg-red-800; }
+  .card { background: rgb(var(--card)); border: 1px solid rgb(var(--card-border)); border-radius: 10px; }
+  .card-hover { transition: border-color .15s, background-color .15s; }
+  .card-hover:hover { border-color: rgb(var(--primary) / .45); }
   .input-field {
-    background-color: rgb(var(--bg));
-    color: rgb(var(--fg));
-    border: 1px solid rgb(var(--card-border));
-    @apply w-full px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm;
+    @apply w-full rounded-lg text-sm;
+    min-height: 44px;
+    padding: 10px 14px;
+    background: rgb(var(--card)); color: rgb(var(--fg)); border: 1px solid rgb(var(--card-border));
+    transition: border-color .15s;
   }
-
-  .upload-area {
-    border: 2px dashed rgb(var(--card-border));
-    background-color: rgb(var(--card));
-    @apply rounded-2xl hover:border-blue-400 transition-all duration-300 cursor-pointer;
-  }
-
-  .upload-area.dragging {
-    @apply border-blue-500 scale-[1.02];
-    background-color: rgba(59, 130, 246, 0.05);
-  }
-
-  .progress-bar {
-    @apply h-2 bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500 ease-out;
-  }
-
-  .alert-success {
-    @apply bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 
-      rounded-xl p-4 flex items-start gap-3;
-  }
-
-  .alert-error {
-    @apply bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 
-      rounded-xl p-4 flex items-start gap-3;
-  }
-
-  .alert-warning {
-    @apply bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 
-      rounded-xl p-4 flex items-start gap-3;
-  }
-
-  .nav-link {
-    color: rgb(var(--muted));
-    @apply text-sm font-medium hover:text-blue-500 transition-colors duration-200;
-  }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    @apply font-bold;
-  }
-
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
-  }
-  .badge-blue { @apply bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300; }
-  .badge-green { @apply bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300; }
-  .badge-purple { @apply bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300; }
-  .badge-orange { @apply bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300; }
-  .badge-red { @apply bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300; }
+  .input-field:focus { outline: 2px solid rgb(var(--primary) / .2); outline-offset: 1px; border-color: rgb(var(--primary)); }
+  .nav-link { color: rgb(var(--muted)); @apply text-sm font-medium; transition: color .15s; }
+  .nav-link:hover { color: rgb(var(--fg)); }
+  .nav-link.active { color: rgb(var(--primary)); }
+  .badge { @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium; background: rgb(var(--subtle)); color: rgb(var(--muted)); }
+  .badge-blue, .badge-green, .badge-purple, .badge-orange, .badge-red { background: rgb(var(--subtle)); color: rgb(var(--muted)); }
+  .alert-success, .alert-error, .alert-warning { @apply rounded-lg p-4 flex items-start gap-3 text-sm; border: 1px solid; }
+  .alert-success { @apply bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800; }
+  .alert-error { @apply bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800; }
+  .alert-warning { @apply bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800; }
+  .section-title { font-family: inherit; @apply font-semibold; }
+  .upload-area { border: 1px dashed rgb(var(--muted) / .5); background: rgb(var(--bg)); border-radius: 8px; transition: border-color .15s, background-color .15s; }
+  .upload-area:hover, .upload-area.dragging { border-color: rgb(var(--primary)); background: rgb(var(--primary) / .035); }
+  .progress-bar, .quota-bar-fill { background: rgb(var(--primary)); height: 100%; border-radius: 2px; transition: width .2s; }
+  .quota-bar { height: 4px; background: rgb(var(--card-border)); border-radius: 2px; overflow: hidden; }
+  .app-container { @apply mx-auto w-full px-5 sm:px-8; max-width: 1248px; }
+  .muted { color: rgb(var(--muted)); }
+  .accent { color: rgb(var(--primary)); }
+  .surface-subtle { background: rgb(var(--subtle)); }
+  .icon-tile { display: flex; align-items: center; justify-content: center; background: rgb(var(--subtle)); color: rgb(var(--primary)); border: 1px solid rgb(var(--card-border)); border-radius: 8px; }
+  .category-link { @apply flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm; color: rgb(var(--muted)); transition: background-color .15s; }
+  .category-link:hover { background: rgb(var(--subtle)); color: rgb(var(--fg)); }
+  .category-link.selected { background: rgb(var(--subtle)); color: rgb(var(--primary)); font-weight: 600; }
+  .tool-card { @apply block p-5; background: rgb(var(--card)); border: 1px solid rgb(var(--card-border)); border-radius: 9px; transition: border-color .15s, background-color .15s; }
+  .tool-card:hover { border-color: rgb(var(--primary) / .5); background: rgb(var(--primary) / .025); }
+  .format-tag { @apply inline-flex items-center rounded border px-1.5 py-0.5 font-mono; font-size: 10px; letter-spacing: .02em; border-color: rgb(var(--card-border)); color: rgb(var(--muted)); background: rgb(var(--bg)); }
+  .icon-button { @apply inline-flex h-10 w-10 items-center justify-center rounded-lg; color: rgb(var(--muted)); }
+  .icon-button:hover { background: rgb(var(--subtle)); color: rgb(var(--fg)); }
 }
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-in;
-  }
-  .animate-slide-up {
-    animation: slideUp 0.6s ease-out both;
-  }
-  .animate-scale-in {
-    animation: scaleIn 0.4s ease-out both;
-  }
-  .text-gradient {
-    @apply bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent;
-  }
-  .dark .text-gradient {
-    @apply from-blue-400 to-violet-400;
-  }
+/* Legacy entry transitions remain deliberately static; status spinners still animate. */
+.animate-fade-in, .animate-slide-up, .animate-scale-in { animation: none; }
+.text-gradient { color: rgb(var(--primary)); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-@keyframes blob {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-}
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 
-.animate-blob { animation: blob 7s infinite; }
-.animation-delay-2000 { animation-delay: 2s; }
-.animation-delay-4000 { animation-delay: 4s; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: rgb(var(--bg)); }
-::-webkit-scrollbar-thumb { background: rgb(var(--card-border)); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgb(var(--muted)); }
-
-/* Quota bar */
-.quota-bar {
-  height: 6px;
-  background: rgb(var(--card-border));
-  border-radius: 3px;
-  overflow: hidden;
-}
-.quota-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-  border-radius: 3px;
-  transition: width 0.5s ease;
+@media (max-width: 767px) {
+  .input-field { font-size: 16px; }
+  .category-link, .icon-button { min-height: 44px; }
 }

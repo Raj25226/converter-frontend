@@ -8,7 +8,7 @@ import {
   Activity, Calendar, Zap, AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { getUser, isAdmin } from "@/lib/auth";
+import { getUser, getToken, isAdmin } from "@/lib/auth";
 
 // ── Types ─────────────────────────────────────────────────────
 interface AnalyticsData {
@@ -30,6 +30,23 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   // Guard: check admin role on mount
+  async function fetchAnalytics() {
+    try {
+      const response = await fetch("/api/analytics/stats", { headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await response.json();
+      if (data.status === "success") {
+        setAnalytics(data.data);
+      } else {
+        throw new Error("API error");
+      }
+    } catch {
+      setAnalytics(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     const user = getUser();
     if (!user) {
@@ -44,43 +61,6 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, []);
 
-  const fetchAnalytics = async () => {
-    try {
-      const response = await fetch("/api/analytics/stats");
-      const data = await response.json();
-      if (data.status === "success") {
-        setAnalytics(data.data);
-      } else {
-        throw new Error("API error");
-      }
-    } catch {
-      // Placeholder data when API is not yet connected
-      setAnalytics({
-        totalVisits: 125847,
-        totalConversions: 89234,
-        uniqueVisitors: 67891,
-        conversionRate: 70.9,
-        todayVisits: 1423,
-        todayConversions: 867,
-        topTools: [
-          { name: "PDF → Word", count: 23415 },
-          { name: "JPG → PNG", count: 18902 },
-          { name: "Word → PDF", count: 15678 },
-          { name: "MP4 → MP3", count: 11234 },
-          { name: "ZIP Extract", count: 8920 },
-        ],
-        recentActivity: [
-          { time: "2 min ago", action: "Conversion", details: "PDF → Word (2.4 MB)" },
-          { time: "5 min ago", action: "New User", details: "user@example.com registered" },
-          { time: "8 min ago", action: "Conversion", details: "JPG → PNG (1.1 MB)" },
-          { time: "12 min ago", action: "Conversion", details: "MP4 → MP3 (14.2 MB)" },
-          { time: "18 min ago", action: "Conversion", details: "Word → PDF (0.8 MB)" },
-        ],
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatNumber = (num: number) => {
     if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
@@ -92,7 +72,7 @@ export default function AnalyticsPage() {
   if (authorized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "rgb(var(--bg))" }}>
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -114,7 +94,7 @@ export default function AnalyticsPage() {
 
           <h1
             className="text-3xl font-black mb-3"
-            style={{ fontFamily: "Syne, sans-serif" }}
+            style={{ fontFamily: "inherit" }}
           >
             Access Restricted
           </h1>
@@ -128,7 +108,7 @@ export default function AnalyticsPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-white bg-gradient-to-r from-blue-600 to-violet-600 rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-[rgb(var(--on-primary))] bg-[rgb(var(--primary))]   rounded-xl hover:shadow-none  transition-all"
             >
               <ArrowLeft className="w-4 h-4" /> Go to Homepage
             </Link>
@@ -156,8 +136,8 @@ export default function AnalyticsPage() {
       label: "Total Visits",
       value: formatNumber(analytics?.totalVisits ?? 0),
       sub: `${formatNumber(analytics?.todayVisits ?? 0)} today`,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      color: "accent",
+      bg: "surface-subtle",
     },
     {
       icon: FileCheck,
@@ -172,8 +152,8 @@ export default function AnalyticsPage() {
       label: "Unique Visitors",
       value: formatNumber(analytics?.uniqueVisitors ?? 0),
       sub: "All time",
-      color: "text-violet-500",
-      bg: "bg-violet-500/10",
+      color: "accent",
+      bg: "surface-subtle",
     },
     {
       icon: TrendingUp,
@@ -181,7 +161,7 @@ export default function AnalyticsPage() {
       value: (analytics?.conversionRate ?? 0).toFixed(1) + "%",
       sub: "Visitors who convert",
       color: "text-orange-500",
-      bg: "bg-orange-500/10",
+      bg: "surface-subtle",
     },
   ];
 
@@ -201,7 +181,7 @@ export default function AnalyticsPage() {
               <Shield className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <h1 className="font-bold text-lg" style={{ fontFamily: "Syne, sans-serif" }}>
+              <h1 className="font-bold text-lg" style={{ fontFamily: "inherit" }}>
                 Analytics Dashboard
               </h1>
               <p className="text-xs" style={{ color: "rgb(var(--muted))" }}>
@@ -240,11 +220,11 @@ export default function AnalyticsPage() {
             {statCards.map((card, i) => {
               const Icon = card.icon;
               return (
-                <div key={i} className="card p-5 group hover:shadow-lg transition-all duration-300">
+                <div key={i} className="card p-5 group hover:shadow-none transition-all duration-300">
                   <div className={`w-10 h-10 ${card.bg} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                     <Icon className={`w-5 h-5 ${card.color}`} />
                   </div>
-                  <div className="text-2xl font-bold mb-0.5" style={{ fontFamily: "Syne, sans-serif" }}>
+                  <div className="text-2xl font-bold mb-0.5" style={{ fontFamily: "inherit" }}>
                     {card.value}
                   </div>
                   <div className="text-xs font-medium" style={{ color: "rgb(var(--fg))" }}>{card.label}</div>
@@ -261,8 +241,8 @@ export default function AnalyticsPage() {
           {/* Top Tools */}
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-5">
-              <BarChart3 className="w-5 h-5 text-blue-500" />
-              <h2 className="font-bold" style={{ fontFamily: "Syne, sans-serif" }}>Top Conversion Tools</h2>
+              <BarChart3 className="w-5 h-5 accent" />
+              <h2 className="font-bold" style={{ fontFamily: "inherit" }}>Top Conversion Tools</h2>
             </div>
             {loading ? (
               <div className="space-y-3">
@@ -296,8 +276,8 @@ export default function AnalyticsPage() {
           {/* Recent Activity */}
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Activity className="w-5 h-5 text-violet-500" />
-              <h2 className="font-bold" style={{ fontFamily: "Syne, sans-serif" }}>Recent Activity</h2>
+              <Activity className="w-5 h-5 accent" />
+              <h2 className="font-bold" style={{ fontFamily: "inherit" }}>Recent Activity</h2>
             </div>
             {loading ? (
               <div className="space-y-3">
@@ -313,8 +293,8 @@ export default function AnalyticsPage() {
                     className="flex items-start gap-3 py-2 border-b last:border-0"
                     style={{ borderColor: "rgb(var(--card-border))" }}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Zap className="w-4 h-4 text-violet-500" />
+                    <div className="w-8 h-8 rounded-lg surface-subtle flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Zap className="w-4 h-4 accent" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{item.details}</div>
@@ -348,65 +328,3 @@ export default function AnalyticsPage() {
 
 // ── Inline public analytics strip (for homepage) ──────────────
 // This is a lightweight version safe to show to everyone.
-export function PublicAnalyticsStrip() {
-  const [analytics, setAnalytics] = useState<Pick<AnalyticsData, "totalVisits" | "totalConversions" | "uniqueVisitors" | "conversionRate"> | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/analytics/stats")
-      .then((r) => r.json())
-      .then((d) => { if (d.status === "success") setAnalytics(d.data); })
-      .catch(() =>
-        setAnalytics({ totalVisits: 125847, totalConversions: 89234, uniqueVisitors: 67891, conversionRate: 70.9 })
-      )
-      .finally(() => setLoading(false));
-  }, []);
-
-  const fmt = (n: number) => n >= 1000 ? (n / 1000).toFixed(0) + "K+" : n.toLocaleString();
-
-  const stats = [
-    { icon: Globe, label: "Total Visits", value: fmt(analytics?.totalVisits ?? 0), color: "text-blue-500", bg: "bg-blue-500/10" },
-    { icon: FileCheck, label: "Files Converted", value: fmt(analytics?.totalConversions ?? 0), color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { icon: Users, label: "Unique Visitors", value: fmt(analytics?.uniqueVisitors ?? 0), color: "text-violet-500", bg: "bg-violet-500/10" },
-    { icon: TrendingUp, label: "Conversion Rate", value: (analytics?.conversionRate ?? 0).toFixed(1) + "%", color: "text-orange-500", bg: "bg-orange-500/10" },
-  ];
-
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => <div key={i} className="card p-6 animate-pulse" style={{ height: "90px" }} />)}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {stats.map((s, i) => {
-        const Icon = s.icon;
-        return (
-          <div key={i} className="card p-4 md:p-5 group hover:shadow-lg transition-all duration-300">
-            <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-              <Icon className={`w-5 h-5 ${s.color}`} />
-            </div>
-            <div className="text-2xl font-bold mb-0.5" style={{ fontFamily: "Syne, sans-serif" }}>{s.value}</div>
-            <div className="text-xs" style={{ color: "rgb(var(--muted))" }}>{s.label}</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// Keep backward compat export for old Analytics import
-export { PublicAnalyticsStrip as Analytics };
-
-export const trackConversion = async (converterType: string) => {
-  try {
-    const sessionId = sessionStorage.getItem("visit_session_id") || `session_${Date.now()}`;
-    await fetch("/api/analytics/track-conversion", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ converterType, timestamp: new Date().toISOString(), sessionId }),
-    });
-  } catch {}
-};
