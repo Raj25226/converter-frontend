@@ -1,4 +1,5 @@
 'use client';
+import { useFeatures, Feature } from './FeatureProvider';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -15,7 +16,7 @@ import {
     Info,
     Check,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { tools, categories } from '@/lib/tools';
@@ -280,7 +281,16 @@ export default function FileConverter({
         setIsDragging(false);
         if (e.dataTransfer.files?.[0]) selectFile(e.dataTransfer.files[0]);
     };
+    const { enabled, ready: featuresReady } = useFeatures();
+    const conversionEnabled =
+        enabled('conversions') &&
+        enabled(`conversion-${endpoint.slice(1)}`) &&
+        enabled('background-jobs');
     const handleUpload = async () => {
+        if (!conversionEnabled) {
+            setError('This conversion is currently disabled.');
+            return;
+        }
         if (!file || uploading) return;
         uiRevision.current++;
         if (job && !isActiveJob(job)) pendingRequest.current = null;
@@ -404,6 +414,12 @@ export default function FileConverter({
         <>
             <Navbar />
             <main className="app-container flex-1 py-8 sm:py-11">
+                {featuresReady && !conversionEnabled && (
+                    <p role="status" className="alert-warning mb-5">
+                        New conversions are currently disabled. Existing jobs
+                        can still be checked or cancelled.
+                    </p>
+                )}
                 <nav
                     aria-label="Breadcrumb"
                     className="flex flex-wrap items-center gap-2 text-xs muted mb-8"
@@ -746,25 +762,32 @@ export default function FileConverter({
                                             >
                                                 Convert another
                                             </button>
-                                            <a
-                                                href={downloadUrl}
-                                                onClick={(event) => {
-                                                    if (
-                                                        expiresAt &&
-                                                        Date.parse(expiresAt) <=
-                                                            Date.now()
-                                                    ) {
-                                                        event.preventDefault();
-                                                        setError(
-                                                            'This download has expired. Convert the file again.',
-                                                        );
+                                            <Feature name="downloads">
+                                                <a
+                                                    href={
+                                                        enabled('downloads')
+                                                            ? downloadUrl
+                                                            : undefined
                                                     }
-                                                }}
-                                                className="btn btn-primary px-5"
-                                            >
-                                                <Download size={16} />
-                                                Download file
-                                            </a>
+                                                    onClick={(event) => {
+                                                        if (
+                                                            expiresAt &&
+                                                            Date.parse(
+                                                                expiresAt,
+                                                            ) <= Date.now()
+                                                        ) {
+                                                            event.preventDefault();
+                                                            setError(
+                                                                'This download has expired. Convert the file again.',
+                                                            );
+                                                        }
+                                                    }}
+                                                    className="btn btn-primary px-5"
+                                                >
+                                                    <Download size={16} />
+                                                    Download file
+                                                </a>
+                                            </Feature>
                                         </>
                                     ) : (
                                         <>
@@ -780,7 +803,11 @@ export default function FileConverter({
                                             )}
                                             <button
                                                 onClick={handleUpload}
-                                                disabled={!file || uploading}
+                                                disabled={
+                                                    !file ||
+                                                    uploading ||
+                                                    !conversionEnabled
+                                                }
                                                 className="btn btn-primary px-6"
                                             >
                                                 {uploading ? (

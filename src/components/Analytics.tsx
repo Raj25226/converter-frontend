@@ -14,7 +14,7 @@ import {
     Zap,
     AlertCircle,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import { getUser, getToken, isAdmin } from '@/lib/auth';
 
 // ── Types ─────────────────────────────────────────────────────

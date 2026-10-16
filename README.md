@@ -50,3 +50,19 @@ npm run test:ui
 ```
 
 On Linux CI, install browser OS dependencies using `npx playwright-core install --with-deps chromium-headless-shell`. `CONVERTER_BROWSER_EXECUTABLE` may select an existing compatible Chromium binary. `CONVERTER_UI_TEST_URL` may point at an already running local frontend instead of starting one; API responses are intercepted within the fresh test browser contexts.
+
+## Runtime feature availability
+
+The frontend reads public booleans from `GET /api/features` through a shared
+provider, refreshing on focus and every 15 seconds while visible. Disabled links,
+login/signup forms, OAuth, downloads, account actions, and converters are guarded.
+If availability cannot be loaded, new feature actions stay unavailable and show a
+retry message; the admin page remains reachable with a valid session.
+
+Administrators manage database flags in the Feature flags section, including reset
+to environment defaults. The backend enforces availability independently of the UI;
+changing browser state never authorizes an operation. Deploy backend migration V6
+and the feature endpoints before this frontend. Existing jobs remain recoverable
+and cancellable when submissions are disabled. Turning off login also blocks new
+admin sign-ins; existing sessions remain valid. See the backend README for the
+operator recovery procedure and `FEATURE_FLAGS_SOURCE=environment` mode.

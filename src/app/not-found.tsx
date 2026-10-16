@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import { Home, ArrowLeft, FileQuestion, Search } from 'lucide-react';
 
 // Popular tools to suggest on 404

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import {
     Users,
     FileCheck,
@@ -13,6 +13,7 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import FeatureFlagsPanel from '@/components/FeatureFlagsPanel';
 import Footer from '@/components/Footer';
 import { getUser, getToken, type User as AuthUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -453,6 +454,7 @@ export default function AdminPage() {
                         </div>
                     </div>
 
+                    <FeatureFlagsPanel />
                     {/* System info */}
                     <div className="card p-6">
                         <h2

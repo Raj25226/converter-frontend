@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import Image from 'next/image';
 import {
     ArrowLeft,
@@ -13,6 +13,7 @@ import {
     AlertCircle,
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import { Feature } from '@/components/FeatureProvider';
 import Footer from '@/components/Footer';
 import { getUser, getToken, logout, type User as AuthUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
@@ -302,74 +303,81 @@ export default function ProfilePage() {
                         </form>
                     </div>
 
-                    {/* Change password */}
-                    <div className="card p-6">
-                        <h3 className="font-semibold flex items-center gap-2 text-sm mb-4">
-                            <Lock className="w-4 h-4" /> Change Password
-                        </h3>
-                        <form
-                            onSubmit={handleChangePassword}
-                            className="space-y-4"
-                        >
-                            {(
-                                [
-                                    {
-                                        label: 'Current Password',
-                                        key: 'currentPassword',
-                                    },
-                                    {
-                                        label: 'New Password',
-                                        key: 'newPassword',
-                                    },
-                                    {
-                                        label: 'Confirm New Password',
-                                        key: 'confirmPassword',
-                                    },
-                                ] as const
-                            ).map((field) => (
-                                <div key={field.key}>
-                                    <label
-                                        className="block text-xs font-semibold mb-1.5"
-                                        style={{ color: 'rgb(var(--muted))' }}
-                                    >
-                                        {field.label}
-                                    </label>
-                                    <div className="relative">
-                                        <Lock
-                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                    <Feature name="password-change">
+                        {' '}
+                        {/* Change password */}
+                        <div className="card p-6">
+                            <h3 className="font-semibold flex items-center gap-2 text-sm mb-4">
+                                <Lock className="w-4 h-4" /> Change Password
+                            </h3>
+                            <form
+                                onSubmit={handleChangePassword}
+                                className="space-y-4"
+                            >
+                                {(
+                                    [
+                                        {
+                                            label: 'Current Password',
+                                            key: 'currentPassword',
+                                        },
+                                        {
+                                            label: 'New Password',
+                                            key: 'newPassword',
+                                        },
+                                        {
+                                            label: 'Confirm New Password',
+                                            key: 'confirmPassword',
+                                        },
+                                    ] as const
+                                ).map((field) => (
+                                    <div key={field.key}>
+                                        <label
+                                            className="block text-xs font-semibold mb-1.5"
                                             style={{
                                                 color: 'rgb(var(--muted))',
                                             }}
-                                        />
-                                        <input
-                                            type="password"
-                                            value={passwordForm[field.key]}
-                                            onChange={(e) =>
-                                                setPasswordForm((p) => ({
-                                                    ...p,
-                                                    [field.key]: e.target.value,
-                                                }))
-                                            }
-                                            className="input-field pl-10"
-                                            placeholder="••••••••"
-                                            minLength={
-                                                field.key !== 'currentPassword'
-                                                    ? 8
-                                                    : undefined
-                                            }
-                                        />
+                                        >
+                                            {field.label}
+                                        </label>
+                                        <div className="relative">
+                                            <Lock
+                                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                                                style={{
+                                                    color: 'rgb(var(--muted))',
+                                                }}
+                                            />
+                                            <input
+                                                type="password"
+                                                value={passwordForm[field.key]}
+                                                onChange={(e) =>
+                                                    setPasswordForm((p) => ({
+                                                        ...p,
+                                                        [field.key]:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="input-field pl-10"
+                                                placeholder="••••••••"
+                                                minLength={
+                                                    field.key !==
+                                                    'currentPassword'
+                                                        ? 8
+                                                        : undefined
+                                                }
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="btn btn-primary px-6 py-2.5 text-sm"
-                            >
-                                {saving ? 'Updating...' : 'Change Password'}
-                            </button>
-                        </form>
-                    </div>
+                                ))}
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="btn btn-primary px-6 py-2.5 text-sm"
+                                >
+                                    {saving ? 'Updating...' : 'Change Password'}
+                                </button>
+                            </form>
+                        </div>
+                    </Feature>
 
                     {/* Danger zone */}
                     <div

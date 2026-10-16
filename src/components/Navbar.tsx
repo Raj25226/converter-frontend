@@ -1,5 +1,5 @@
 'use client';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Moon, Sun, LogOut, User, Menu, X, ArrowUpRight } from 'lucide-react';

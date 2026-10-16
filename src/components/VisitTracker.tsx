@@ -1,9 +1,13 @@
 'use client';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useFeatures } from './FeatureProvider';
 export default function VisitTracker() {
     const pathname = usePathname();
+    const { enabled } = useFeatures();
+    const trackingEnabled = enabled('analytics-tracking');
     useEffect(() => {
+        if (!trackingEnabled) return;
         try {
             let sessionId = sessionStorage.getItem('visit_session_id');
             if (!sessionId) {
@@ -18,6 +22,6 @@ export default function VisitTracker() {
         } catch {
             /* Analytics does not prevent conversion when storage is unavailable. */
         }
-    }, [pathname]);
+    }, [pathname, trackingEnabled]);
     return null;
 }

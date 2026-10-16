@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useRef, useState } from 'react';
 import Script from 'next/script';
+import { useFeatures } from './FeatureProvider';
 import { useRouter } from 'next/navigation';
 
 declare global {
@@ -34,6 +35,7 @@ export default function GoogleSignIn({
     text = 'continue_with',
     className = '',
 }: Props) {
+    const { enabled } = useFeatures();
     const router = useRouter();
     const button = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export default function GoogleSignIn({
             width: 300,
         });
     };
-    if (!clientId) return null;
+    if (!clientId || !enabled('login') || !enabled('google-oauth')) return null;
     return (
         <div className={className}>
             <Script

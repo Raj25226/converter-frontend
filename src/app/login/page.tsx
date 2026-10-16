@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import { useRouter } from 'next/navigation';
 import {
     Mail,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import GoogleSignIn from '@/components/GoogleSignIn';
+import { Feature } from '@/components/FeatureProvider';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -124,15 +125,17 @@ export default function LoginPage() {
                                 <p className="text-sm text-amber-700 dark:text-amber-400 mb-2">
                                     Email verification required.
                                 </p>
-                                <button
-                                    onClick={handleResendVerification}
-                                    disabled={verificationSent}
-                                    className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline"
-                                >
-                                    {verificationSent
-                                        ? 'Sent! Check your inbox'
-                                        : 'Resend verification email'}
-                                </button>
+                                <Feature name="email-verification">
+                                    <button
+                                        onClick={handleResendVerification}
+                                        disabled={verificationSent}
+                                        className="text-xs font-semibold text-amber-800 dark:text-amber-300 underline"
+                                    >
+                                        {verificationSent
+                                            ? 'Sent! Check your inbox'
+                                            : 'Resend verification email'}
+                                    </button>
+                                </Feature>
                             </div>
                         )}
 

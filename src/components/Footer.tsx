@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import Logo from '@/components/Logo';
 export default function Footer() {
     return (

@@ -6,6 +6,42 @@ const http = require('node:http');
 const nodePath = require('node:path');
 const os = require('node:os');
 const { spawn } = require('node:child_process');
+const featureDefaults = {
+    login: true,
+    signup: true,
+    'google-oauth': true,
+    'email-verification': true,
+    'password-reset': true,
+    profile: true,
+    'password-change': true,
+    history: true,
+    'analytics-tracking': true,
+    'analytics-dashboard': true,
+    downloads: true,
+    'background-jobs': true,
+    conversions: true,
+    'conversion-pdf-to-word': true,
+    'conversion-word-to-pdf': true,
+    'conversion-pdf-to-excel': true,
+    'conversion-excel-to-pdf': true,
+    'conversion-ppt-to-pdf': true,
+    'conversion-jpg-to-png': true,
+    'conversion-png-to-jpg': true,
+    'conversion-jpg-to-webp': true,
+    'conversion-webp-to-png': true,
+    'conversion-heic-to-jpg': true,
+    'conversion-mp4-to-mp3': true,
+    'conversion-mp4-to-gif': true,
+    'conversion-wav-to-mp3': true,
+    'conversion-zip-extract': true,
+    'conversion-file-compress': true,
+};
+const sendFeatures = (route) =>
+    route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(featureDefaults),
+    });
 
 (async () => {
     let frontend, browser, artifact;
@@ -88,11 +124,17 @@ const { spawn } = require('node:child_process');
             colorScheme: 'light',
         });
         await layoutContext.route('**/api/**', (route) =>
-            route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                body: JSON.stringify({ remaining: 99, limit: 100, used: 1 }),
-            }),
+            new URL(route.request().url()).pathname === '/api/features'
+                ? sendFeatures(route)
+                : route.fulfill({
+                      status: 200,
+                      contentType: 'application/json',
+                      body: JSON.stringify({
+                          remaining: 99,
+                          limit: 100,
+                          used: 1,
+                      }),
+                  }),
         );
         const layoutPage = await layoutContext.newPage();
         await layoutPage.goto(baseUrl);
@@ -175,8 +217,45 @@ const { spawn } = require('node:child_process');
                 }),
             );
         });
+        let adminLoginEnabled = true;
+        let adminLoginOverridden = false;
         await adminContext.route('**/api/**', (route) => {
             const path = new URL(route.request().url()).pathname;
+            if (path === '/api/features')
+                return route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        ...featureDefaults,
+                        login: adminLoginEnabled,
+                    }),
+                });
+            if (path.startsWith('/api/admin/features')) {
+                if (route.request().method() === 'PATCH') {
+                    adminLoginEnabled = route.request().postDataJSON().enabled;
+                    adminLoginOverridden = true;
+                }
+                if (route.request().method() === 'DELETE') {
+                    adminLoginEnabled = true;
+                    adminLoginOverridden = false;
+                }
+                return route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        source: 'database',
+                        editable: true,
+                        flags: [
+                            {
+                                key: 'login',
+                                enabled: adminLoginEnabled,
+                                defaultEnabled: true,
+                                overridden: adminLoginOverridden,
+                            },
+                        ],
+                    }),
+                });
+            }
             const data =
                 path === '/api/admin/stats'
                     ? {
@@ -203,18 +282,85 @@ const { spawn } = require('node:child_process');
         });
         const adminPage = await adminContext.newPage();
         await adminPage.goto(baseUrl + '/admin');
-        const configuration = adminPage
-            .locator('.card')
-            .filter({
-                has: adminPage.getByRole('heading', {
-                    name: 'System Configuration',
-                }),
-            });
+        const configuration = adminPage.locator('.card').filter({
+            has: adminPage.getByRole('heading', {
+                name: 'System Configuration',
+            }),
+        });
         for (const value of ['100/day', '137/day', '73 MB', '17 min'])
             await configuration.getByText(value, { exact: true }).waitFor();
+        const loginFlag = adminPage.getByLabel('login', { exact: true });
+        await loginFlag.click();
+        await adminPage
+            .getByRole('button', { name: 'Reset to default' })
+            .waitFor();
+        assert.equal(adminLoginEnabled, false);
+        await adminPage.reload();
+        await adminPage
+            .getByRole('button', { name: 'Reset to default' })
+            .waitFor();
+        assert.equal(
+            await adminPage.getByLabel('login', { exact: true }).isChecked(),
+            false,
+        );
+        await adminPage
+            .getByRole('button', { name: 'Reset to default' })
+            .click();
+        await adminPage.waitForFunction(
+            () =>
+                document.querySelector(
+                    'section[aria-label="Feature flags"] input',
+                )?.checked === true,
+        );
+        assert.equal(adminLoginEnabled, true);
         await adminContext.close();
         console.log(
             'PASS browser: admin configuration displays backend values',
+        );
+        const disabledContext = await browser.newContext();
+        await disabledContext.route('**/api/**', (route) => {
+            const path = new URL(route.request().url()).pathname;
+            const body =
+                path === '/api/features'
+                    ? {
+                          ...featureDefaults,
+                          login: false,
+                          signup: false,
+                          'conversion-pdf-to-word': false,
+                      }
+                    : { remaining: 99, limit: 100, used: 1 };
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(body),
+            });
+        });
+        const disabledPage = await disabledContext.newPage();
+        await disabledPage.goto(baseUrl);
+        await disabledPage
+            .getByRole('link', { name: /Word to PDF/ })
+            .first()
+            .waitFor();
+        assert.equal(
+            await disabledPage.locator('a[href="/pdf-to-word"]').count(),
+            0,
+        );
+        assert.equal(await disabledPage.locator('a[href="/login"]').count(), 0);
+        assert.equal(
+            await disabledPage.locator('a[href="/signup"]').count(),
+            0,
+        );
+        await disabledPage.goto(baseUrl + '/login');
+        await disabledPage
+            .getByRole('heading', { name: 'Feature unavailable' })
+            .waitFor();
+        assert.equal(
+            await disabledPage.locator('input[type="password"]').count(),
+            0,
+        );
+        await disabledContext.close();
+        console.log(
+            'PASS browser: disabled tools and authentication actions are hidden and direct login is gated',
         );
         const context = await browser.newContext({ acceptDownloads: true });
         let quotaReads = 0,
@@ -227,6 +373,7 @@ const { spawn } = require('node:child_process');
             const request = route.request(),
                 url = new URL(request.url()),
                 path = url.pathname;
+            if (path === '/api/features') return sendFeatures(route);
             const send = (data) =>
                 route.fulfill({
                     status: 200,
@@ -402,6 +549,7 @@ const { spawn } = require('node:child_process');
         });
         await history.route('**/api/**', async (route) => {
             const url = new URL(route.request().url());
+            if (url.pathname === '/api/features') return sendFeatures(route);
             let body = { status: 'success' };
             if (url.pathname === '/api/convert/quota')
                 body = { remaining: 99, limit: 100 };
@@ -462,6 +610,17 @@ const { spawn } = require('node:child_process');
         let identityReads = 0;
         await authContext.route('**/api/**', async (route) => {
             const path = new URL(route.request().url()).pathname;
+            if (path === '/api/features') return sendFeatures(route);
+            if (path === '/api/admin/features')
+                return route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        source: 'database',
+                        editable: true,
+                        flags: [],
+                    }),
+                });
             if (path === '/api/convert/quota') {
                 identityReads++;
                 const authenticated = !!route.request().headers().authorization;

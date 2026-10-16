@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import VisitTracker from '@/components/VisitTracker';
+import { FeatureProvider, FeatureAccess } from '@/components/FeatureProvider';
 
 export const metadata: Metadata = {
     title: {
@@ -64,8 +65,10 @@ export default function RootLayout({
                     color: 'rgb(var(--fg))',
                 }}
             >
-                <VisitTracker />
-                {children}
+                <FeatureProvider>
+                    <VisitTracker />
+                    <FeatureAccess>{children}</FeatureAccess>
+                </FeatureProvider>
             </body>
         </html>
     );

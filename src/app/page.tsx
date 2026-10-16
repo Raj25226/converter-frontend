@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import {
     ArrowRight,
     Search,
@@ -14,8 +14,13 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { categories, tools } from '@/lib/tools';
 import { getUser } from '@/lib/auth';
+import { useFeatures } from '@/components/FeatureProvider';
 
 export default function Home() {
+    const { enabled, ready, error, refresh } = useFeatures();
+    const availableTools = tools.filter(
+        (tool) => enabled('conversions') && enabled(`conversion-${tool.id}`),
+    );
     const [signedIn, setSignedIn] = useState(false);
     const [category, setCategory] = useState('all');
     const [search, setSearch] = useState('');
@@ -34,7 +39,7 @@ export default function Home() {
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
     }, []);
-    const visible = tools.filter(
+    const visible = availableTools.filter(
         (tool) =>
             (category === 'all' || tool.category === category) &&
             `${tool.name} ${tool.description} ${tool.from} ${tool.to} ${tool.category}`
@@ -51,6 +56,17 @@ export default function Home() {
         <>
             <Navbar />
             <main className="app-container flex-1 pb-14">
+                {!ready && (
+                    <p role="status" className="muted py-4">
+                        Loading feature availability…
+                    </p>
+                )}
+                {error && (
+                    <p role="alert" className="py-4">
+                        {error}{' '}
+                        <button onClick={() => void refresh()}>Retry</button>
+                    </p>
+                )}
                 <header
                     className="pt-10 sm:pt-14 pb-9 sm:pb-11 border-b"
                     style={{ borderColor: 'rgb(var(--card-border))' }}
@@ -100,8 +116,8 @@ export default function Home() {
                                 const Icon = group.icon;
                                 const count =
                                     group.id === 'all'
-                                        ? tools.length
-                                        : tools.filter(
+                                        ? availableTools.length
+                                        : availableTools.filter(
                                               (tool) =>
                                                   tool.category === group.id,
                                           ).length;

@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import { Download, Trash2, Clock, FileCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import { Feature } from '@/components/FeatureProvider';
 import Footer from '@/components/Footer';
 import { getToken } from '@/lib/auth';
 
@@ -264,15 +265,18 @@ export default function DashboardPage() {
                                             <div className="flex items-center gap-3">
                                                 {!expired &&
                                                     item.downloadUrl && (
-                                                        <a
-                                                            href={
-                                                                item.downloadUrl
-                                                            }
-                                                            className="btn btn-secondary px-4 py-2"
-                                                        >
-                                                            <Download className="w-4 h-4 mr-2" />
-                                                            Download
-                                                        </a>
+                                                        <Feature name="downloads">
+                                                            {' '}
+                                                            <a
+                                                                href={
+                                                                    item.downloadUrl
+                                                                }
+                                                                className="btn btn-secondary px-4 py-2"
+                                                            >
+                                                                <Download className="w-4 h-4 mr-2" />
+                                                                Download
+                                                            </a>
+                                                        </Feature>
                                                     )}
                                                 <button
                                                     disabled={deleting !== null}

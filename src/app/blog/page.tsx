@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import Link from '@/components/FeatureLink';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ArrowRight, Calendar, Clock } from 'lucide-react';
