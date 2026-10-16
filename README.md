@@ -29,3 +29,21 @@ Production dependencies currently audit clean. Remaining audit findings are in d
 Auth tokens are currently stored in localStorage. Password changes revoke old tokens and return the user to login. Account verification and reset tokens are removed from the browser URL after being read. Configure HTTPS and review the operator's privacy/support details before publishing.
 
 The interface uses a shared forest-green accent, warm neutral surfaces, and a corresponding dark theme. Update semantic color variables in `src/app/globals.css` and the `brand` scale in `tailwind.config.js` to change the palette. Tool metadata and categories live in `src/lib/tools.ts`.
+
+
+## Conversion jobs and regression checks
+
+This frontend requires the backend `/api/jobs` endpoints and migrations V4/V5. Deploy the backend first. Uploads receive a durable job ID; once accepted, users can navigate away and return to resume processing or download the result. The UI displays conversion warnings and uses native browser downloads. Navbar and converter share one account-scoped quota request/cache. History is paginated with abortable requests and pauses automatic refresh while hidden.
+
+Browser regression tests use isolated API fixtures and a real local download endpoint. They verify quota deduplication, state transitions, refresh recovery, recovery after a lost submission response, warnings, native downloads, cancellation, pagination, and stale account responses. They start and stop an isolated production frontend automatically.
+
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm run build
+npx playwright-core install chromium-headless-shell
+npm run test:ui
+```
+
+On Linux CI, install browser OS dependencies using `npx playwright-core install --with-deps chromium-headless-shell`. `CONVERTER_BROWSER_EXECUTABLE` may select an existing compatible Chromium binary. `CONVERTER_UI_TEST_URL` may point at an already running local frontend instead of starting one; API responses are intercepted within the fresh test browser contexts.

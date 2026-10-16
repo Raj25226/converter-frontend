@@ -3,9 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Moon, Sun, LogOut, User, Menu, X, ArrowUpRight } from "lucide-react";
-import { getUser, getToken, logout, User as UserType } from "@/lib/auth";
+import { getUser, logout, User as UserType } from "@/lib/auth";
 import { getInitialTheme, applyTheme, Theme } from "@/lib/theme";
 import { useRouter, usePathname } from "next/navigation";
+import { useQuota } from "@/lib/quota-store";
 import Logo from "@/components/Logo";
 
 export default function Navbar() {
@@ -13,21 +14,16 @@ export default function Navbar() {
   const [user, setUser] = useState<UserType | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [quota, setQuota] = useState<{ remaining: number; limit: number } | null>(null);
+  const { quota } = useQuota();
   useEffect(() => {
-    setUser(getUser()); const initial = getInitialTheme(); setTheme(initial); applyTheme(initial);
-    const refresh = async () => {
-      try {
-        const token = getToken();
-        const response = await fetch("/api/convert/quota", { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" });
-        if (response.ok) setQuota(await response.json());
-      } catch { setQuota(null); }
-    };
-    refresh(); window.addEventListener("conversion-quota-changed", refresh);
-    return () => window.removeEventListener("conversion-quota-changed", refresh);
+    const syncUser = () => setUser(getUser());
+    syncUser(); const initial = getInitialTheme(); setTheme(initial); applyTheme(initial);
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("conversion-quota-changed", syncUser);
+    return () => { window.removeEventListener("storage", syncUser); window.removeEventListener("conversion-quota-changed", syncUser); };
   }, []);
   const toggleTheme = () => { const next = theme === "light" ? "dark" : "light"; setTheme(next); applyTheme(next); };
-  const handleLogout = () => { logout(); setUser(null); setQuota(null); setMenuOpen(false); router.push("/"); window.dispatchEvent(new Event("conversion-quota-changed")); };
+  const handleLogout = () => { logout(); setUser(null); setMenuOpen(false); router.push("/"); window.dispatchEvent(new Event("conversion-quota-changed")); };
   const links = [{ href: "/", label: "Tools", active: pathname === "/" || toolsPage(pathname) }, { href: "/dashboard", label: "History", active: pathname === "/dashboard" }, { href: "/blog", label: "Guides", active: pathname.startsWith("/blog") }];
   return <header className="sticky top-0 z-50 border-b" style={{ background: "rgb(var(--card))", borderColor: "rgb(var(--card-border))" }}>
     <nav className="app-container" aria-label="Main navigation"><div className="h-[68px] flex items-center justify-between gap-5">
