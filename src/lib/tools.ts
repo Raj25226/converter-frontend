@@ -8,6 +8,7 @@ import {
     Film,
     Minimize2,
     LayoutGrid,
+    ImageDown,
 } from 'lucide-react';
 export const categories = [
     { id: 'all', label: 'All tools', icon: LayoutGrid },
@@ -17,6 +18,15 @@ export const categories = [
     { id: 'utilities', label: 'File utilities', icon: FileArchive },
 ];
 export const tools = [
+    {
+        id: 'image-compressor',
+        name: 'Image compressor',
+        description: 'Reduce image size privately on your device.',
+        category: 'images',
+        from: 'IMAGE',
+        to: 'SMALLER',
+        icon: ImageDown,
+    },
     {
         id: 'pdf-to-word',
         name: 'PDF to Word',

@@ -7,6 +7,7 @@ const nodePath = require('node:path');
 const os = require('node:os');
 const { spawn } = require('node:child_process');
 const featureDefaults = {
+    'conversion-image-compressor': true,
     login: true,
     signup: true,
     'google-oauth': true,
@@ -327,6 +328,7 @@ const sendFeatures = (route) =>
                           login: false,
                           signup: false,
                           'conversion-pdf-to-word': false,
+                          'conversion-image-compressor': false,
                       }
                     : { remaining: 99, limit: 100, used: 1 };
             return route.fulfill({
@@ -358,9 +360,257 @@ const sendFeatures = (route) =>
             await disabledPage.locator('input[type="password"]').count(),
             0,
         );
+        await disabledPage.goto(baseUrl + '/image-compressor');
+        await disabledPage
+            .getByRole('heading', { name: 'Feature unavailable' })
+            .waitFor();
         await disabledContext.close();
         console.log(
             'PASS browser: disabled tools and authentication actions are hidden and direct login is gated',
+        );
+        const compressorContext = await browser.newContext({
+            acceptDownloads: true,
+        });
+        let compressorUploads = 0;
+        await compressorContext.route('**/api/**', (route) => {
+            const path = new URL(route.request().url()).pathname;
+            if (path === '/api/features') return sendFeatures(route);
+            if (
+                path.startsWith('/api/jobs') ||
+                (path.startsWith('/api/convert/') &&
+                    path !== '/api/convert/quota')
+            )
+                compressorUploads++;
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ remaining: 99, limit: 100, used: 1 }),
+            });
+        });
+        const compressorPage = await compressorContext.newPage();
+        await compressorPage.goto(baseUrl + '/image-compressor');
+        await compressorPage
+            .getByRole('heading', { name: 'Image compressor', exact: true })
+            .waitFor();
+        const png = Buffer.from(
+            await compressorPage.evaluate(() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 600;
+                canvas.height = 400;
+                const drawing = canvas.getContext('2d');
+                const pixels = drawing.createImageData(600, 400);
+                let seed = 123456;
+                const random = () => {
+                    seed ^= seed << 13;
+                    seed ^= seed >>> 17;
+                    seed ^= seed << 5;
+                    return seed & 255;
+                };
+                for (let at = 0; at < pixels.data.length; at += 4) {
+                    pixels.data[at] = random();
+                    pixels.data[at + 1] = random();
+                    pixels.data[at + 2] = random();
+                    pixels.data[at + 3] = at < 600 * 4 * 100 ? 0 : 255;
+                }
+                drawing.putImageData(pixels, 0, 0);
+                return canvas.toDataURL('image/png').split(',')[1];
+            }),
+            'base64',
+        );
+        const input = compressorPage.getByLabel('Choose image file');
+        await input.setInputFiles({
+            name: 'sample.png',
+            mimeType: 'image/png',
+            buffer: png,
+        });
+        await compressorPage.getByAltText('Selected file preview').waitFor();
+        await compressorPage
+            .getByLabel('Output format')
+            .selectOption('image/jpeg');
+        await compressorPage
+            .getByRole('button', { name: '20 KB', exact: true })
+            .click();
+        await compressorPage
+            .getByRole('button', { name: 'Compress image', exact: true })
+            .click();
+        await compressorPage
+            .getByRole('heading', { name: 'Target reached', exact: true })
+            .waitFor();
+        let compressorDownloadEvent = compressorPage.waitForEvent('download');
+        await compressorPage
+            .getByRole('link', { name: 'Download image', exact: true })
+            .click();
+        let compressedDownload = await compressorDownloadEvent;
+        let compressedBytes = await fs.readFile(
+            await compressedDownload.path(),
+        );
+        assert.ok(
+            compressedBytes.length <= 20 * 1024 &&
+                compressedBytes.length < png.length,
+        );
+        assert.equal(compressedBytes[0], 255);
+        assert.equal(compressedBytes[1], 216);
+        assert.match(compressedDownload.suggestedFilename(), /\.jpg$/);
+        await compressorPage
+            .getByLabel('Output format')
+            .selectOption('image/png');
+        await compressorPage
+            .getByRole('button', { name: '200 KB', exact: true })
+            .click();
+        await compressorPage
+            .getByRole('button', { name: 'Compress image', exact: true })
+            .click();
+        await compressorPage
+            .getByRole('heading', { name: 'Target reached', exact: true })
+            .waitFor();
+        compressorDownloadEvent = compressorPage.waitForEvent('download');
+        await compressorPage
+            .getByRole('link', { name: 'Download image', exact: true })
+            .click();
+        compressedDownload = await compressorDownloadEvent;
+        compressedBytes = await fs.readFile(await compressedDownload.path());
+        assert.ok(compressedBytes.length <= 200 * 1024);
+        const alpha = await compressorPage.evaluate(async (encoded) => {
+            const bytes = Uint8Array.from(atob(encoded), (c) =>
+                c.charCodeAt(0),
+            );
+            const bitmap = await createImageBitmap(
+                new Blob([bytes], { type: 'image/png' }),
+            );
+            const canvas = document.createElement('canvas');
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            const drawing = canvas.getContext('2d');
+            drawing.drawImage(bitmap, 0, 0);
+            bitmap.close();
+            return drawing.getImageData(0, 0, 1, 1).data[3];
+        }, compressedBytes.toString('base64'));
+        assert.equal(alpha, 0, 'PNG retains transparent areas');
+        await compressorPage.getByLabel('Target size (KB)').fill('1');
+        await compressorPage
+            .getByLabel('Allow resizing to approach the target')
+            .uncheck();
+        await compressorPage
+            .getByRole('button', { name: 'Compress image', exact: true })
+            .click();
+        await compressorPage
+            .getByRole('heading', { name: 'Target not reached', exact: true })
+            .waitFor();
+        await input.setInputFiles({
+            name: 'bad.png',
+            mimeType: 'image/png',
+            buffer: Buffer.from('invalid image'),
+        });
+        await compressorPage
+            .getByRole('alert')
+            .filter({ hasText: 'unsupported or damaged' })
+            .waitFor();
+        await compressorPage.setViewportSize({ width: 390, height: 844 });
+        assert.ok(
+            await compressorPage.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+        );
+        assert.equal(
+            compressorUploads,
+            0,
+            'image files are never submitted to backend conversions',
+        );
+        await compressorContext.close();
+        console.log(
+            'PASS browser: local image compression, JPEG target/download, PNG transparency, honest unmet target, invalid inputs, mobile layout, and no uploads',
+        );
+        const fallbackContext = await browser.newContext();
+        await fallbackContext.addInitScript(() => {
+            window.Worker = undefined;
+        });
+        await fallbackContext.route('**/api/**', (route) =>
+            new URL(route.request().url()).pathname === '/api/features'
+                ? sendFeatures(route)
+                : route.fulfill({
+                      status: 200,
+                      contentType: 'application/json',
+                      body: '{}',
+                  }),
+        );
+        const fallbackPage = await fallbackContext.newPage();
+        await fallbackPage.goto(baseUrl + '/image-compressor');
+        const smallJpeg = Buffer.from(
+            await fallbackPage.evaluate(() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 80;
+                canvas.height = 60;
+                const drawing = canvas.getContext('2d');
+                drawing.fillStyle = '#31775a';
+                drawing.fillRect(0, 0, 80, 60);
+                return canvas.toDataURL('image/jpeg').split(',')[1];
+            }),
+            'base64',
+        );
+        await fallbackPage.getByLabel('Choose image file').setInputFiles({
+            name: 'small.jpg',
+            mimeType: 'image/jpeg',
+            buffer: smallJpeg,
+        });
+        await fallbackPage.getByAltText('Selected file preview').waitFor();
+        await fallbackPage
+            .getByRole('button', { name: 'Compress image', exact: true })
+            .click();
+        await fallbackPage
+            .getByRole('link', { name: 'Download original', exact: true })
+            .waitFor();
+        await fallbackContext.close();
+        const cancellationContext = await browser.newContext();
+        await cancellationContext.addInitScript(() => {
+            const NativeWorker = window.Worker;
+            window.Worker = class extends NativeWorker {
+                postMessage(message) {
+                    setTimeout(() => super.postMessage(message), 200);
+                }
+            };
+        });
+        await cancellationContext.route('**/api/**', (route) =>
+            new URL(route.request().url()).pathname === '/api/features'
+                ? sendFeatures(route)
+                : route.fulfill({
+                      status: 200,
+                      contentType: 'application/json',
+                      body: '{}',
+                  }),
+        );
+        const cancellationPage = await cancellationContext.newPage();
+        await cancellationPage.goto(baseUrl + '/image-compressor');
+        await cancellationPage.getByLabel('Choose image file').setInputFiles({
+            name: 'cancel.png',
+            mimeType: 'image/png',
+            buffer: png,
+        });
+        await cancellationPage.getByAltText('Selected file preview').waitFor();
+        await cancellationPage
+            .getByRole('button', { name: 'Compress image', exact: true })
+            .click();
+        await cancellationPage
+            .getByRole('button', { name: 'Cancel compression', exact: true })
+            .click();
+        await cancellationPage
+            .getByRole('alert')
+            .filter({ hasText: 'Compression cancelled' })
+            .waitFor();
+        assert.equal(
+            await cancellationPage
+                .getByAltText('Selected file preview')
+                .count(),
+            1,
+        );
+        await cancellationPage
+            .getByRole('button', { name: 'Compress image', exact: true })
+            .click();
+        await cancellationPage
+            .getByRole('heading', { name: 'Target reached', exact: true })
+            .waitFor();
+        await cancellationContext.close();
+        console.log(
+            'PASS browser: compressor worker-less fallback, original preservation, cancellation, and retry',
         );
         const context = await browser.newContext({ acceptDownloads: true });
         let quotaReads = 0,

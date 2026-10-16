@@ -66,3 +66,20 @@ and the feature endpoints before this frontend. Existing jobs remain recoverable
 and cancellable when submissions are disabled. Turning off login also blocks new
 admin sign-ins; existing sessions remain valid. See the backend README for the
 operator recovery procedure and `FEATURE_FLAGS_SOURCE=environment` mode.
+
+## Image compressor
+
+`/image-compressor` (also linked from `/compress-image`) reuses the browser-local
+compression engine from `../image-compressor/apps/web/features/image-compressor`.
+It supports one JPEG, PNG, or WebP at a time, target presets/custom KB values,
+format selection, optional resizing, before/after previews, cancellation, and
+local Blob downloads. No file is uploaded and no daily conversion quota is used.
+Originals are offered when encoding cannot produce a smaller result. Targets are
+best-effort; metadata may be removed and animated inputs become still images.
+
+The backend's `conversion-image-compressor` flag (migration V8, enabled by default)
+and global conversions flag control availability in the UI. This does not prevent
+someone from processing images independently in their own browser. Download UI
+also respects the downloads flag. Input limits are 20 MB / 40 megapixels; target
+sizes range from 1 to 20,480 KB. Worker processing has a bounded runtime with a
+Canvas fallback for browsers without the worker capabilities.

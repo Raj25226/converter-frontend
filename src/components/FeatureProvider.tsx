@@ -23,6 +23,7 @@ const FeatureContext = createContext<FeatureContextValue | null>(null);
 export function requiredFeature(path: string): string | undefined {
     return (
         {
+            '/image-compressor': 'conversion-image-compressor',
             '/login': 'login',
             '/signup': 'signup',
             '/forgot-password': 'password-reset',
@@ -114,7 +115,12 @@ export function FeatureAccess({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { enabled, ready, error, refresh } = useFeatures();
     const required = requiredFeature(pathname);
-    if (!required || enabled(required)) return children;
+    if (
+        !required ||
+        (enabled(required) &&
+            (pathname !== '/image-compressor' || enabled('conversions')))
+    )
+        return children;
     return (
         <>
             <Navbar />
