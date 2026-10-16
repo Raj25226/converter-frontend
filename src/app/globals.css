@@ -270,6 +270,39 @@
         border-color: rgb(var(--primary) / 0.5);
         background: rgb(var(--primary) / 0.025);
     }
+    .tool-card-featured {
+        border-color: rgb(var(--primary) / 0.55);
+        background:
+            linear-gradient(
+                135deg,
+                rgb(var(--primary) / 0.085),
+                transparent 80%
+            ),
+            rgb(var(--card));
+        box-shadow: inset 3px 0 0 rgb(var(--primary));
+        transition:
+            border-color 0.15s,
+            box-shadow 0.15s;
+    }
+    .tool-card-featured:hover,
+    .tool-card-featured:focus-visible {
+        border-color: rgb(var(--primary));
+        background:
+            linear-gradient(
+                135deg,
+                rgb(var(--primary) / 0.12),
+                transparent 80%
+            ),
+            rgb(var(--card));
+        box-shadow:
+            inset 3px 0 0 rgb(var(--primary)),
+            0 6px 20px rgb(var(--primary) / 0.09);
+    }
+    .tool-card-featured .icon-tile,
+    .compressor-highlight {
+        color: rgb(var(--on-primary));
+        background: rgb(var(--primary));
+    }
     .format-tag {
         @apply inline-flex items-center rounded border px-1.5 py-0.5 font-mono;
         font-size: 10px;

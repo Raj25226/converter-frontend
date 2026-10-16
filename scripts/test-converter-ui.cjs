@@ -390,7 +390,10 @@ const sendFeatures = (route) =>
         const compressorPage = await compressorContext.newPage();
         await compressorPage.goto(baseUrl + '/image-compressor');
         await compressorPage
-            .getByRole('heading', { name: 'Image compressor', exact: true })
+            .getByRole('heading', {
+                name: 'Image compressor',
+                exact: true,
+            })
             .waitFor();
         const png = Buffer.from(
             await compressorPage.evaluate(() => {

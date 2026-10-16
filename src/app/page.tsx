@@ -16,6 +16,13 @@ import { categories, tools } from '@/lib/tools';
 import { getUser } from '@/lib/auth';
 import { useFeatures } from '@/components/FeatureProvider';
 
+const highlightedTools = new Set([
+    'image-compressor',
+    'pdf-to-word',
+    'word-to-pdf',
+    'jpg-to-png',
+]);
+
 export default function Home() {
     const { enabled, ready, error, refresh } = useFeatures();
     const availableTools = tools.filter(
@@ -279,7 +286,7 @@ export default function Home() {
                                                 <Link
                                                     key={tool.id}
                                                     href={`/${tool.id}`}
-                                                    className="tool-card group"
+                                                    className={`tool-card group ${highlightedTools.has(tool.id) ? 'tool-card-featured' : ''}`}
                                                 >
                                                     <div className="flex items-center justify-between mb-5">
                                                         <div className="icon-tile w-9 h-9">
@@ -304,7 +311,7 @@ export default function Home() {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                                                        <h4 className="text-[15px] font-semibold">
+                                                        <h4 className="text-[15px] font-semibold flex flex-wrap items-center gap-2">
                                                             {tool.name}
                                                         </h4>
                                                         <ArrowRight

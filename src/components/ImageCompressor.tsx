@@ -175,11 +175,11 @@ export default function ImageCompressor() {
             <Navbar />
             <main className="app-container flex-1 py-10">
                 <div className="flex items-start gap-4 mb-8">
-                    <span className="icon-tile h-12 w-12">
+                    <span className="icon-tile compressor-highlight h-12 w-12">
                         <ImageDown />
                     </span>
                     <div>
-                        <h1 className="text-3xl font-semibold">
+                        <h1 className="text-3xl font-semibold flex flex-wrap items-center gap-3">
                             Image compressor
                         </h1>
                         <p className="muted mt-2">
