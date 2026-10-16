@@ -161,6 +161,61 @@ const { spawn } = require('node:child_process');
         console.log(
             'PASS browser: desktop/mobile layout and manual dark theme',
         );
+        const adminContext = await browser.newContext();
+        await adminContext.addInitScript(() => {
+            localStorage.setItem('token', 'admin-fixture-token');
+            localStorage.setItem(
+                'user',
+                JSON.stringify({
+                    id: '1',
+                    firstName: 'Config',
+                    lastName: 'Admin',
+                    email: 'config@example.test',
+                    role: 'admin',
+                }),
+            );
+        });
+        await adminContext.route('**/api/**', (route) => {
+            const path = new URL(route.request().url()).pathname;
+            const data =
+                path === '/api/admin/stats'
+                    ? {
+                          totalVisits: 0,
+                          totalConversions: 0,
+                          totalUsers: 1,
+                          conversionRate: 0,
+                          toolStats: [],
+                          systemConfiguration: {
+                              guestDailyLimit: 100,
+                              userDailyLimit: 137,
+                              maxFileSizeMb: 73,
+                              expiryMinutes: 17,
+                          },
+                      }
+                    : path === '/api/admin/users'
+                      ? { users: [], total: 0 }
+                      : { remaining: 100, limit: 100, used: 0 };
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify(data),
+            });
+        });
+        const adminPage = await adminContext.newPage();
+        await adminPage.goto(baseUrl + '/admin');
+        const configuration = adminPage
+            .locator('.card')
+            .filter({
+                has: adminPage.getByRole('heading', {
+                    name: 'System Configuration',
+                }),
+            });
+        for (const value of ['100/day', '137/day', '73 MB', '17 min'])
+            await configuration.getByText(value, { exact: true }).waitFor();
+        await adminContext.close();
+        console.log(
+            'PASS browser: admin configuration displays backend values',
+        );
         const context = await browser.newContext({ acceptDownloads: true });
         let quotaReads = 0,
             submissions = 0,

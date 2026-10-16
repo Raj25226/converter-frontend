@@ -23,6 +23,12 @@ interface AdminStats {
     totalUsers: number;
     conversionRate: number;
     toolStats: { tool: string; count: number }[];
+    systemConfiguration?: {
+        guestDailyLimit: number;
+        userDailyLimit: number;
+        maxFileSizeMb: number;
+        expiryMinutes: number;
+    };
 }
 interface AdminUser extends Omit<AuthUser, 'id'> {
     id: number;
@@ -457,10 +463,30 @@ export default function AdminPage() {
                         </h2>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                             {[
-                                { label: 'Guest Limit', value: '2/day' },
-                                { label: 'User Limit', value: '10/day' },
-                                { label: 'Max File Size', value: '50 MB' },
-                                { label: 'Auto-delete', value: '30 min' },
+                                {
+                                    label: 'Guest Limit',
+                                    value: stats?.systemConfiguration
+                                        ? `${stats.systemConfiguration.guestDailyLimit}/day`
+                                        : '—',
+                                },
+                                {
+                                    label: 'User Limit',
+                                    value: stats?.systemConfiguration
+                                        ? `${stats.systemConfiguration.userDailyLimit}/day`
+                                        : '—',
+                                },
+                                {
+                                    label: 'Max File Size',
+                                    value: stats?.systemConfiguration
+                                        ? `${stats.systemConfiguration.maxFileSizeMb} MB`
+                                        : '—',
+                                },
+                                {
+                                    label: 'Auto-delete',
+                                    value: stats?.systemConfiguration
+                                        ? `${stats.systemConfiguration.expiryMinutes} min`
+                                        : '—',
+                                },
                             ].map((item) => (
                                 <div
                                     key={item.label}
